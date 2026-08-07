@@ -1,35 +1,34 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
+import { Redirect, Tabs } from 'expo-router';
 
-import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { CustomTabBar } from '@/components/custom-tab-bar';
+import { Palette } from '@/constants/theme';
+import { useAuth } from '@/lib/auth-context';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  const { loaded, phone } = useAuth();
+
+  if (!loaded) {
+    return null;
+  }
+
+  if (!phone) {
+    return <Redirect href="/login" />;
+  }
 
   return (
     <Tabs
+      tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
         headerShown: false,
-        tabBarButton: HapticTab,
+        tabBarActiveTintColor: Palette.primary,
+        tabBarInactiveTintColor: '#8A857C',
       }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="explore"
-        options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
-        }}
-      />
+      <Tabs.Screen name="index" options={{ title: 'Dashboard', tabBarLabel: 'Dashboard' }} />
+      <Tabs.Screen name="job-cards" options={{ title: 'Orders', tabBarLabel: 'Orders' }} />
+      <Tabs.Screen name="karigars" options={{ title: 'Karigars', tabBarLabel: 'Karigars' }} />
+      <Tabs.Screen name="customers" options={{ title: 'Customers', tabBarLabel: 'Customers' }} />
+      <Tabs.Screen name="reports" options={{ title: 'Reports', tabBarLabel: 'Reports' }} />
+      <Tabs.Screen name="profile" options={{ title: 'Profile', tabBarLabel: 'Profile' }} />
     </Tabs>
   );
 }
