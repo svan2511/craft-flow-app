@@ -1,16 +1,20 @@
-import { useCallback, useState } from 'react';
-import { Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useRef, useState } from 'react';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Screen } from '@/components/screen';
 import { Icon } from '@/components/ui/icon';
 import { ReportsSkeleton } from '@/components/ui/screen-skeletons';
+import { useToast } from '@/components/toast-provider';
 import { Palette, Radius, Type } from '@/constants/theme';
+import { useAuth } from '@/lib/auth-context';
 import { apiRequest } from '@/lib/api';
 import { formatRupees, formatRupeesShort } from '@/lib/format';
 import { stageIcon } from '@/lib/order-status';
+import { shareReportPdf } from '@/lib/share-report-pdf';
 import { useFocusApi } from '@/lib/use-focus-api';
+import { useTabScrollToTop } from '@/lib/use-tab-scroll-top';
 
-type PeriodKey = 'today' | 'this_week' | 'this_month' | 'this_year';
+export type PeriodKey = 'today' | 'this_week' | 'this_month' | 'this_year';
 
 type ModeSlice = { cash: number; online: number; upi: number; cheque: number };
 
@@ -30,7 +34,7 @@ type ProfitSlice = {
   margin: number;
 };
 
-type ReportSummary = {
+export type ReportSummary = {
   collections: Record<PeriodKey, CollectionSlice>;
   karigar_outflow: Record<PeriodKey, { total: number; advance: number; settlement: number }>;
   balance_sheet: {
@@ -197,6 +201,11 @@ function StageFunnelRow({ stage }: { stage: ReportSummary['stage_funnel'][number
 
 export default function ReportsScreen() {
   const [period, setPeriod] = useState<PeriodKey>('this_month');
+  const [exporting, setExporting] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
+  useTabScrollToTop(scrollRef);
+  const { business } = useAuth();
+  const { showToast } = useToast();
 
   const { data, loading, error, reload } = useFocusApi(
     useCallback(() => apiRequest<ReportSummary>('/reports/summary', { authenticated: true }), []),
@@ -204,6 +213,25 @@ export default function ReportsScreen() {
 
   const report = data;
   const periodLabel = PERIODS.find((p) => p.key === period)?.label ?? '';
+
+  const onDownload = async () => {
+    if (!report || exporting) {
+      return;
+    }
+    setExporting(true);
+    try {
+      await shareReportPdf(report, period, {
+        name: business?.workshopName ?? 'Craft Flow',
+        phone: business?.phone ?? null,
+        city: business?.city ?? null,
+        address: business?.address ?? null,
+      });
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Could not generate report PDF.', { variant: 'error' });
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const collection = report?.collections[period] ?? ZERO_COLLECTION;
   const outflow = report?.karigar_outflow[period] ?? { total: 0, advance: 0, settlement: 0 };
@@ -220,6 +248,7 @@ export default function ReportsScreen() {
 
   return (
     <Screen
+      scrollRef={scrollRef}
       refreshControl={
         <RefreshControl refreshing={loading && !!data} onRefresh={reload} tintColor={Palette.primary} />
       }>
@@ -228,8 +257,21 @@ export default function ReportsScreen() {
       ) : (
         <>
           <View style={styles.pageHeader}>
-            <Text style={styles.pageTitle}>Reports &amp; Analytics</Text>
-            <Text style={styles.pageSubtitle}>Financial &amp; production overview for your workshop.</Text>
+            <View style={styles.pageHeaderText}>
+              <Text style={styles.pageTitle}>Reports &amp; Analytics</Text>
+              <Text style={styles.pageSubtitle}>Financial &amp; production overview for your workshop.</Text>
+            </View>
+            <Pressable
+              style={({ pressed }) => [styles.downloadButton, (exporting || !report) && styles.downloadDisabled, pressed && styles.downloadPressed]}
+              onPress={() => void onDownload()}
+              disabled={exporting || !report}
+              hitSlop={8}>
+              {exporting ? (
+                <ActivityIndicator size={20} color={Palette.primary} />
+              ) : (
+                <Icon name="download" size={24} color={Palette.primary} />
+              )}
+            </Pressable>
           </View>
 
           {error ? <Text style={styles.emptyText}>{error}</Text> : null}
@@ -454,7 +496,8 @@ export default function ReportsScreen() {
 }
 
 const styles = StyleSheet.create({
-  pageHeader: { gap: 4 },
+pageHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  pageHeaderText: { flex: 1, gap: 2 },
   pageTitle: {
     ...Type.headlineLgMobile,
     color: Palette.onSurface,
@@ -462,6 +505,24 @@ const styles = StyleSheet.create({
   },
   pageSubtitle: { ...Type.bodyMd, color: Palette.onSurfaceVariant, marginTop: 2 },
   emptyText: { ...Type.bodyMd, color: Palette.onSurfaceVariant, textAlign: 'center', paddingVertical: 24 },
+
+  downloadButton: {
+    width: 48,
+    height: 48,
+    borderRadius: Radius.pill,
+    backgroundColor: Palette.surfaceContainerLowest,
+    borderWidth: 2,
+    borderColor: 'rgba(138,109,59,0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#1C1B1A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  downloadDisabled: { opacity: 0.55 },
+  downloadPressed: { transform: [{ scale: 0.94 }] },
 
   periodRow: { flexDirection: 'row', gap: 8 },
   periodChip: {

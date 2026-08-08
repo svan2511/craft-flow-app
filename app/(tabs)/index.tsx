@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, type TextStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -18,6 +18,7 @@ import { formatDate, formatRupees } from '@/lib/format';
 import { deliveryBadge, type ApiOrder, type ApiOrderDetail } from '@/lib/order-status';
 import { shareOrderPdf } from '@/lib/share-order-pdf';
 import { useFocusApi } from '@/lib/use-focus-api';
+import { useTabScrollToTop } from '@/lib/use-tab-scroll-top';
 
 const BG_GRADIENT = ['#F8F6F3', '#F5F2EC', '#F8F6F3'] as const;
 const HERO_GRADIENT = ['#FFFFFF', '#F5F0E6'] as const;
@@ -42,8 +43,8 @@ type DashboardSummary = {
     this_week: { material: number; labor: number; gross: number; net: number };
     this_month: { material: number; labor: number; gross: number; net: number };
   };
-  urgent_deliveries: (ApiOrder & { customer?: { name: string } | null })[];
-  recent_orders: (ApiOrder & { customer?: { name: string } | null })[];
+  urgent_deliveries: (ApiOrder & { has_advance?: boolean; customer?: { name: string } | null })[];
+  recent_orders: (ApiOrder & { has_advance?: boolean; customer?: { name: string } | null })[];
 };
 
 export default function DashboardScreen() {
@@ -52,6 +53,8 @@ export default function DashboardScreen() {
   const [paymentOrder, setPaymentOrder] = useState<number | null>(null);
   const [pendingDelivery, setPendingDelivery] = useState<DashboardSummary['urgent_deliveries'][number] | null>(null);
   const [delivering, setDelivering] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
+  useTabScrollToTop(scrollRef);
   const { data, loading, error, reload } = useFocusApi(
     useCallback(() => apiRequest<DashboardSummary>('/dashboard/summary', { authenticated: true }), []),
   );
@@ -93,6 +96,7 @@ export default function DashboardScreen() {
     <LinearGradient colors={[...BG_GRADIENT]} style={styles.root}>
       <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
         <ScrollView
+          ref={scrollRef}
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
           refreshControl={
@@ -358,6 +362,10 @@ export default function DashboardScreen() {
         visible={paymentOrder !== null}
         orderId={paymentOrder ?? 0}
         suggestedAmount={data?.urgent_deliveries.find((o) => o.id === paymentOrder)?.balance_due ?? 0}
+        maxAmount={data?.urgent_deliveries.find((o) => o.id === paymentOrder)?.balance_due ?? 0}
+        advancePaid={
+          data?.urgent_deliveries.find((o) => o.id === paymentOrder)?.has_advance ?? false
+        }
         onClose={() => setPaymentOrder(null)}
         onSaved={() => {
           setPaymentOrder(null);

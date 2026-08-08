@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useCallback, useRef, useState } from 'react';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { KarigarModal } from '@/components/karigar-modal';
 import { Screen } from '@/components/screen';
@@ -12,6 +12,7 @@ import { useToast } from '@/components/toast-provider';
 import { Palette, Radius, Spacing, Type } from '@/constants/theme';
 import { apiRequest } from '@/lib/api';
 import { useFocusApi } from '@/lib/use-focus-api';
+import { useTabScrollToTop } from '@/lib/use-tab-scroll-top';
 
 type KarigarListItem = {
   id: number;
@@ -29,6 +30,8 @@ export default function KarigarsScreen() {
   const [query, setQuery] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
+  useTabScrollToTop(scrollRef);
   const { showToast } = useToast();
 
   const list = useFocusApi(
@@ -78,6 +81,7 @@ export default function KarigarsScreen() {
 
   return (
     <Screen
+      scrollRef={scrollRef}
       refreshControl={
         <RefreshControl refreshing={list.loading && !!list.data} onRefresh={list.reload} tintColor={Palette.primary} />
       }>

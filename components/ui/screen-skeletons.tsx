@@ -165,6 +165,59 @@ export function CustomersSkeleton() {
   );
 }
 
+export function ProfileSkeleton() {
+  return (
+    <Skeleton>
+      <View style={styles.gap}>
+      <View style={styles.hero}>
+        <SkeletonCircle size={60} />
+        <View style={styles.metricText}>
+          <SkeletonText width={120} height={13} />
+          <SkeletonText width={160} height={21} />
+        </View>
+      </View>
+      <SkeletonCard>
+        <SkeletonText width="40%" height={14} />
+        <SkeletonBlock height={1} style={styles.divider} />
+        <View style={styles.avatarRow}>
+          <SkeletonCircle size={36} />
+          <View style={styles.metricText}>
+            <SkeletonText width={120} height={12} />
+            <SkeletonText width={150} height={15} />
+          </View>
+        </View>
+        <View style={styles.avatarRow}>
+          <SkeletonCircle size={36} />
+          <View style={styles.metricText}>
+            <SkeletonText width={90} height={12} />
+            <SkeletonText width={130} height={15} />
+          </View>
+        </View>
+      </SkeletonCard>
+      <SkeletonCard>
+        <SkeletonBlock width="40%" height={14} />
+        <SkeletonBlock style={styles.divider} height={1} />
+        <View style={styles.avatarRow}>
+          <SkeletonCircle size={36} />
+          <View style={styles.metricText}>
+            <SkeletonText width={90} height={12} />
+            <SkeletonText width={140} height={15} />
+          </View>
+        </View>
+        <View style={styles.avatarRow}>
+          <SkeletonCircle size={36} />
+          <View style={styles.metricText}>
+            <SkeletonText width={80} height={12} />
+            <SkeletonText width={120} height={15} />
+          </View>
+        </View>
+      </SkeletonCard>
+      <SkeletonBlock height={56} radius={16} />
+      </View>
+    </Skeleton>
+  );
+}
+
 export function ReportsSkeleton() {
   return (
     <Skeleton>
@@ -216,6 +269,10 @@ const styles = StyleSheet.create({
   },
   heroTitle: {
     marginTop: 4,
+  },
+  divider: {
+    marginVertical: 12,
+    width: '100%',
   },
   metricGrid: {
     flexDirection: 'row',

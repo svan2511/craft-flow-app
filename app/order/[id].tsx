@@ -585,6 +585,8 @@ export default function OrderDetailScreen() {
           visible={paymentOpen}
           orderId={order.id}
           suggestedAmount={order.balance_due}
+          maxAmount={order.balance_due}
+          advancePaid={order.payments?.some((p) => p.type === 'order_advance')}
           onClose={() => setPaymentOpen(false)}
           onSaved={reload}
         />

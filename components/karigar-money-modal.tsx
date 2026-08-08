@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import {
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -86,143 +88,150 @@ export function KarigarMoneyModal({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={close}>
-      <View style={styles.backdrop}>
-        <View style={styles.content}>
-          <View style={styles.headerRow}>
-            <View style={styles.iconWrap}>
-              <Icon
-                name={mode === 'settle' ? 'check_circle' : 'payments'}
-                size={22}
-                color={Palette.primary}
+      <KeyboardAvoidingView
+        style={styles.backdrop}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView
+          contentContainerStyle={styles.backdropInner}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}>
+          <View style={styles.content}>
+            <View style={styles.headerRow}>
+              <View style={styles.iconWrap}>
+                <Icon
+                  name={mode === 'settle' ? 'check_circle' : 'payments'}
+                  size={22}
+                  color={Palette.primary}
+                />
+              </View>
+              <View style={styles.headerText}>
+                <Text style={styles.title}>{title}</Text>
+                {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+              </View>
+            </View>
+
+            <View>
+              <Text style={styles.label}>Order</Text>
+              {orders.length === 0 ? (
+                <View style={styles.noOrders}>
+                  <Text style={styles.noOrdersText}>
+                    No orders assigned to this karigar yet.
+                  </Text>
+                </View>
+              ) : (
+                <View>
+                  <Pressable
+                    onPress={() => setOpen((o) => !o)}
+                    style={[styles.pickerField, open && styles.pickerFieldOpen]}>
+                    <View style={styles.pickerIcon}>
+                      <Icon name="assignment" size={18} color={Palette.primary} />
+                    </View>
+                    <View style={styles.pickerInfo}>
+                      {selected ? (
+                        <>
+                          <Text style={styles.pickerName} numberOfLines={1}>
+                            #{selected.order_no} · {selected.item_name}
+                          </Text>
+                          {mode === 'settle' ? (
+                            <Text style={[styles.pickerHint, { color: Palette.danger }]}>
+                              Pending {formatRupees(selected.pending)}
+                            </Text>
+                          ) : null}
+                        </>
+                      ) : (
+                        <Text style={styles.pickerPlaceholder}>Select an order</Text>
+                      )}
+                    </View>
+                    <Icon
+                      name="arrow_drop_down"
+                      size={22}
+                      color={Palette.onSurfaceVariant}
+                      style={open && styles.pickerChevronOpen}
+                    />
+                  </Pressable>
+
+                  {open ? (
+                    <View style={styles.pickerMenu}>
+                      <ScrollView
+                        style={styles.pickerList}
+                        nestedScrollEnabled
+                        showsVerticalScrollIndicator={false}>
+                        {orders.map((order) => {
+                          const active = order.id === orderId;
+                          return (
+                            <Pressable
+                              key={order.id}
+                              onPress={() => pickOrder(order.id)}
+                              style={[styles.pickerOption, active && styles.pickerOptionActive]}>
+                              <View style={styles.optionIcon}>
+                                <Icon
+                                  name={active ? 'check_circle' : 'assignment'}
+                                  size={16}
+                                  color={active ? Palette.primary : Palette.outline}
+                                />
+                              </View>
+                              <View style={styles.optionInfo}>
+                                <Text
+                                  numberOfLines={1}
+                                  style={[
+                                    styles.optionName,
+                                    { color: active ? Palette.primary : Palette.onSurface },
+                                  ]}>
+                                  #{order.order_no} · {order.item_name}
+                                </Text>
+                                {mode === 'settle' ? (
+                                  <Text style={[styles.optionHint, { color: Palette.danger }]}>
+                                    Pending {formatRupees(order.pending)}
+                                  </Text>
+                                ) : null}
+                              </View>
+                            </Pressable>
+                          );
+                        })}
+                      </ScrollView>
+                    </View>
+                  ) : null}
+                </View>
+              )}
+            </View>
+
+            <View>
+              <Text style={styles.label}>Amount (₹)</Text>
+              <TextInput
+                style={styles.input}
+                value={amount}
+                onChangeText={(t) => setAmount(t.replace(/[^\d.]/g, ''))}
+                placeholder="0"
+                placeholderTextColor={Palette.outline}
+                keyboardType="decimal-pad"
               />
             </View>
-            <View style={styles.headerText}>
-              <Text style={styles.title}>{title}</Text>
-              {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+
+            <View>
+              <Text style={styles.label}>Note (optional)</Text>
+              <TextInput
+                style={styles.input}
+                value={note}
+                onChangeText={setNote}
+                placeholder={notePlaceholder}
+                placeholderTextColor={Palette.outline}
+              />
+            </View>
+
+            <View style={styles.buttonRow}>
+              <Pressable style={styles.cancelButton} onPress={close} disabled={submitLoading}>
+                <Text style={styles.cancelText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.submitButton, submitLoading && styles.buttonDisabled]}
+                onPress={submit}
+                disabled={submitLoading}>
+                <Text style={styles.submitText}>{submitLoading ? 'Saving…' : confirmLabel}</Text>
+              </Pressable>
             </View>
           </View>
-
-          <View>
-            <Text style={styles.label}>Order</Text>
-            {orders.length === 0 ? (
-              <View style={styles.noOrders}>
-                <Text style={styles.noOrdersText}>
-                  No orders assigned to this karigar yet.
-                </Text>
-              </View>
-            ) : (
-              <View>
-                <Pressable
-                  onPress={() => setOpen((o) => !o)}
-                  style={[styles.pickerField, open && styles.pickerFieldOpen]}>
-                  <View style={styles.pickerIcon}>
-                    <Icon name="assignment" size={18} color={Palette.primary} />
-                  </View>
-                  <View style={styles.pickerInfo}>
-                    {selected ? (
-                      <>
-                        <Text style={styles.pickerName} numberOfLines={1}>
-                          #{selected.order_no} · {selected.item_name}
-                        </Text>
-                        {mode === 'settle' ? (
-                          <Text style={[styles.pickerHint, { color: Palette.danger }]}>
-                            Pending {formatRupees(selected.pending)}
-                          </Text>
-                        ) : null}
-                      </>
-                    ) : (
-                      <Text style={styles.pickerPlaceholder}>Select an order</Text>
-                    )}
-                  </View>
-                  <Icon
-                    name="arrow_drop_down"
-                    size={22}
-                    color={Palette.onSurfaceVariant}
-                    style={open && styles.pickerChevronOpen}
-                  />
-                </Pressable>
-
-                {open ? (
-                  <View style={styles.pickerMenu}>
-                    <ScrollView
-                      style={styles.pickerList}
-                      nestedScrollEnabled
-                      showsVerticalScrollIndicator={false}>
-                      {orders.map((order) => {
-                        const active = order.id === orderId;
-                        return (
-                          <Pressable
-                            key={order.id}
-                            onPress={() => pickOrder(order.id)}
-                            style={[styles.pickerOption, active && styles.pickerOptionActive]}>
-                            <View style={styles.optionIcon}>
-                              <Icon
-                                name={active ? 'check_circle' : 'assignment'}
-                                size={16}
-                                color={active ? Palette.primary : Palette.outline}
-                              />
-                            </View>
-                            <View style={styles.optionInfo}>
-                              <Text
-                                numberOfLines={1}
-                                style={[
-                                  styles.optionName,
-                                  { color: active ? Palette.primary : Palette.onSurface },
-                                ]}>
-                                #{order.order_no} · {order.item_name}
-                              </Text>
-                              {mode === 'settle' ? (
-                                <Text style={[styles.optionHint, { color: Palette.danger }]}>
-                                  Pending {formatRupees(order.pending)}
-                                </Text>
-                              ) : null}
-                            </View>
-                          </Pressable>
-                        );
-                      })}
-                    </ScrollView>
-                  </View>
-                ) : null}
-              </View>
-            )}
-          </View>
-
-          <View>
-            <Text style={styles.label}>Amount (₹)</Text>
-            <TextInput
-              style={styles.input}
-              value={amount}
-              onChangeText={(t) => setAmount(t.replace(/[^\d.]/g, ''))}
-              placeholder="0"
-              placeholderTextColor={Palette.outline}
-              keyboardType="decimal-pad"
-            />
-          </View>
-
-          <View>
-            <Text style={styles.label}>Note (optional)</Text>
-            <TextInput
-              style={styles.input}
-              value={note}
-              onChangeText={setNote}
-              placeholder={notePlaceholder}
-              placeholderTextColor={Palette.outline}
-            />
-          </View>
-
-          <View style={styles.buttonRow}>
-            <Pressable style={styles.cancelButton} onPress={close} disabled={submitLoading}>
-              <Text style={styles.cancelText}>Cancel</Text>
-            </Pressable>
-            <Pressable
-              style={[styles.submitButton, submitLoading && styles.buttonDisabled]}
-              onPress={submit}
-              disabled={submitLoading}>
-              <Text style={styles.submitText}>{submitLoading ? 'Saving…' : confirmLabel}</Text>
-            </Pressable>
-          </View>
-        </View>
-      </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -231,8 +240,11 @@ const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.45)',
-    alignItems: 'center',
+  },
+  backdropInner: {
+    flexGrow: 1,
     justifyContent: 'center',
+    alignItems: 'center',
     padding: 20,
   },
   content: {

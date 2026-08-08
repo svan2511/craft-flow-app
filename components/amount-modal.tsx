@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import {
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -66,55 +69,62 @@ export function AmountModal({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={close}>
-      <View style={styles.backdrop}>
-        <View style={contentStyle()}>
-          <View style={styles.headerRow}>
-            <View style={styles.iconWrap}>
-              <Icon name="payments" size={22} color={Palette.primary} />
+      <KeyboardAvoidingView
+        style={styles.backdrop}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView
+          contentContainerStyle={styles.backdropInner}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}>
+          <View style={contentStyle()}>
+            <View style={styles.headerRow}>
+              <View style={styles.iconWrap}>
+                <Icon name="payments" size={22} color={Palette.primary} />
+              </View>
+              <View style={styles.headerText}>
+                <Text style={styles.title}>{title}</Text>
+                {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+              </View>
             </View>
-            <View style={styles.headerText}>
-              <Text style={styles.title}>{title}</Text>
-              {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+
+            <View>
+              <Text style={styles.label}>Amount (₹)</Text>
+              <TextInput
+                style={styles.input}
+                value={amount}
+                onChangeText={(t) => setAmount(t.replace(/[^\d.]/g, ''))}
+                placeholder="0"
+                placeholderTextColor={Palette.outline}
+                keyboardType="decimal-pad"
+                autoFocus
+              />
+            </View>
+
+            <View>
+              <Text style={styles.label}>Note (optional)</Text>
+              <TextInput
+                style={styles.input}
+                value={note}
+                onChangeText={setNote}
+                placeholder={notePlaceholder}
+                placeholderTextColor={Palette.outline}
+              />
+            </View>
+
+            <View style={styles.buttonRow}>
+              <Pressable style={styles.cancelButton} onPress={close} disabled={submitLoading}>
+                <Text style={styles.cancelText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.submitButton, submitLoading && styles.buttonDisabled]}
+                onPress={submit}
+                disabled={submitLoading}>
+                <Text style={styles.submitText}>{submitLoading ? 'Saving…' : confirmLabel}</Text>
+              </Pressable>
             </View>
           </View>
-
-          <View>
-            <Text style={styles.label}>Amount (₹)</Text>
-            <TextInput
-              style={styles.input}
-              value={amount}
-              onChangeText={(t) => setAmount(t.replace(/[^\d.]/g, ''))}
-              placeholder="0"
-              placeholderTextColor={Palette.outline}
-              keyboardType="decimal-pad"
-              autoFocus
-            />
-          </View>
-
-          <View>
-            <Text style={styles.label}>Note (optional)</Text>
-            <TextInput
-              style={styles.input}
-              value={note}
-              onChangeText={setNote}
-              placeholder={notePlaceholder}
-              placeholderTextColor={Palette.outline}
-            />
-          </View>
-
-          <View style={styles.buttonRow}>
-            <Pressable style={styles.cancelButton} onPress={close} disabled={submitLoading}>
-              <Text style={styles.cancelText}>Cancel</Text>
-            </Pressable>
-            <Pressable
-              style={[styles.submitButton, submitLoading && styles.buttonDisabled]}
-              onPress={submit}
-              disabled={submitLoading}>
-              <Text style={styles.submitText}>{submitLoading ? 'Saving…' : confirmLabel}</Text>
-            </Pressable>
-          </View>
-        </View>
-      </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -123,8 +133,11 @@ const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.45)',
-    alignItems: 'center',
+  },
+  backdropInner: {
+    flexGrow: 1,
     justifyContent: 'center',
+    alignItems: 'center',
     padding: 20,
   },
   headerRow: {

@@ -1,5 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 
 import { Icon } from '@/components/ui/icon';
 import { Palette, Radius, Spacing, Type } from '@/constants/theme';
@@ -29,45 +39,52 @@ export function MaterialCostModal({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.backdrop}>
-        <View style={styles.content}>
-          <View style={styles.headerRow}>
-            <View style={styles.iconWrap}>
-              <Icon name="inventory_2" size={22} color={Palette.primary} />
+      <KeyboardAvoidingView
+        style={styles.backdrop}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView
+          contentContainerStyle={styles.backdropInner}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}>
+          <View style={styles.content}>
+            <View style={styles.headerRow}>
+              <View style={styles.iconWrap}>
+                <Icon name="inventory_2" size={22} color={Palette.primary} />
+              </View>
+              <View style={styles.headerText}>
+                <Text style={styles.title}>Material Cost</Text>
+              </View>
             </View>
-            <View style={styles.headerText}>
-              <Text style={styles.title}>Material Cost</Text>
+
+            <View>
+              <Text style={styles.label}>Material Cost (₹)</Text>
+              <TextInput
+                style={styles.input}
+                value={cost}
+                onChangeText={(t) => setCost(t.replace(/[^\d.]/g, ''))}
+                placeholder="0"
+                placeholderTextColor={Palette.outline}
+                keyboardType="decimal-pad"
+                autoFocus
+              />
+            </View>
+
+            <View style={styles.buttonRow}>
+              <Pressable style={styles.cancelButton} onPress={onClose} disabled={submitLoading}>
+                <Text style={styles.cancelText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.submitButton, (!canSubmit || submitLoading) && styles.buttonDisabled]}
+                onPress={() =>
+                  onSubmit(cost.trim() === '' ? null : parseFloat(cost))
+                }
+                disabled={!canSubmit || submitLoading}>
+                <Text style={styles.submitText}>{submitLoading ? 'Saving…' : 'Save'}</Text>
+              </Pressable>
             </View>
           </View>
-
-          <View>
-            <Text style={styles.label}>Material Cost (₹)</Text>
-            <TextInput
-              style={styles.input}
-              value={cost}
-              onChangeText={(t) => setCost(t.replace(/[^\d.]/g, ''))}
-              placeholder="0"
-              placeholderTextColor={Palette.outline}
-              keyboardType="decimal-pad"
-              autoFocus
-            />
-          </View>
-
-          <View style={styles.buttonRow}>
-            <Pressable style={styles.cancelButton} onPress={onClose} disabled={submitLoading}>
-              <Text style={styles.cancelText}>Cancel</Text>
-            </Pressable>
-            <Pressable
-              style={[styles.submitButton, (!canSubmit || submitLoading) && styles.buttonDisabled]}
-              onPress={() =>
-                onSubmit(cost.trim() === '' ? null : parseFloat(cost))
-              }
-              disabled={!canSubmit || submitLoading}>
-              <Text style={styles.submitText}>{submitLoading ? 'Saving…' : 'Save'}</Text>
-            </Pressable>
-          </View>
-        </View>
-      </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -76,8 +93,11 @@ const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.45)',
-    alignItems: 'center',
+  },
+  backdropInner: {
+    flexGrow: 1,
     justifyContent: 'center',
+    alignItems: 'center',
     padding: 20,
   },
   content: {

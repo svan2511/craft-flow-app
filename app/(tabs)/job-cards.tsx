@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { JobCard } from '@/components/job-card';
@@ -12,6 +12,7 @@ import { apiRequest } from '@/lib/api';
 import { formatRupees } from '@/lib/format';
 import { orderStatusMeta, type ApiOrder, type ApiOrderStatus } from '@/lib/order-status';
 import { useFocusApi } from '@/lib/use-focus-api';
+import { useTabScrollToTop } from '@/lib/use-tab-scroll-top';
 
 const FILTERS: { label: string; status: ApiOrderStatus | '*' }[] = [
   { label: 'All', status: '*' },
@@ -26,6 +27,8 @@ export default function JobCardsScreen() {
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<ApiOrderStatus | '*'>('*');
+  const scrollRef = useRef<ScrollView>(null);
+  useTabScrollToTop(scrollRef);
 
   const fetcher = useCallback(
     () =>
@@ -50,6 +53,7 @@ export default function JobCardsScreen() {
 
   return (
     <Screen
+      scrollRef={scrollRef}
       refreshControl={
         <RefreshControl refreshing={loading && !!data} onRefresh={reload} tintColor={Palette.primary} />
       }>

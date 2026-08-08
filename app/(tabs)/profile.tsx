@@ -1,15 +1,28 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useRef, useState } from 'react';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ConfirmModal } from '@/components/ui/confirm-modal';
 import { Icon } from '@/components/ui/icon';
+import { ProfileSkeleton } from '@/components/ui/screen-skeletons';
 import { Palette, Type } from '@/constants/theme';
 import { useAuth } from '@/lib/auth-context';
+import { apiRequest } from '@/lib/api';
+import { useFocusApi } from '@/lib/use-focus-api';
+import { useTabScrollToTop } from '@/lib/use-tab-scroll-top';
 
 const BG_GRADIENT = ['#F8F6F3', '#F5F2EC', '#F8F6F3'] as const;
 const HERO_GRADIENT = ['#FFFFFF', '#F3ECDD'] as const;
+
+type ProfileWorkshop = {
+  id: number;
+  name: string;
+  owner_name: string | null;
+  city: string | null;
+  phone: string | null;
+  address: string | null;
+};
 
 function DetailRow({
   icon,
@@ -42,9 +55,27 @@ export default function ProfileScreen() {
   const { phone, business, logout } = useAuth();
   const [confirming, setConfirming] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
+  useTabScrollToTop(scrollRef);
 
-  const workshopName = business?.workshopName || 'Craft Flow';
-  const verifiedNumber = business?.phone || phone || '';
+  const profile = useFocusApi(
+    useCallback(
+      () =>
+        apiRequest<{ user: { phone: string; has_workshop: boolean }; workshop: ProfileWorkshop | null }>(
+          '/auth/me',
+          { authenticated: true },
+        ),
+      [],
+    ),
+  );
+
+  const workshop = profile.data?.workshop ?? null;
+  const workshopName = workshop?.name ?? business?.workshopName ?? 'Craft Flow';
+  const verifiedNumber = workshop?.phone ?? business?.phone ?? phone ?? '';
+  const ownerName = workshop?.owner_name ?? business?.ownerName ?? '';
+  const businessCity = workshop?.city ?? business?.city ?? '';
+  const businessAddress = workshop?.address ?? business?.address ?? '';
+  const verifiedHouse = workshop?.phone ?? business?.phone ?? phone ?? '';
   const initials = workshopName
     .split(' ')
     .filter(Boolean)
@@ -74,8 +105,20 @@ export default function ProfileScreen() {
     <LinearGradient colors={[...BG_GRADIENT]} style={styles.root}>
       <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
         <ScrollView
+          ref={scrollRef}
           contentContainerStyle={styles.content}
-          showsVerticalScrollIndicator={false}>
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={profile.loading && !!profile.data}
+              onRefresh={profile.reload}
+              tintColor={Palette.primary}
+            />
+          }>
+          {profile.loading && !profile.data ? (
+            <ProfileSkeleton />
+          ) : (
+            <>
           <LinearGradient colors={[...HERO_GRADIENT]} style={styles.hero}>
             <View style={styles.heroTop}>
               <View style={styles.heroInitWrap}>
@@ -108,8 +151,8 @@ export default function ProfileScreen() {
               <Text style={styles.sectionTitle}>Business Details</Text>
             </View>
             <View style={styles.details}>
-              <DetailRow icon="local_shipping" label="Workshop Name" value={business?.workshopName ?? ''} />
-              <DetailRow icon="person" label="Owner Name" value={business?.ownerName ?? ''} last />
+              <DetailRow icon="local_shipping" label="Workshop Name" value={workshopName} />
+              <DetailRow icon="person" label="Owner Name" value={ownerName} last />
             </View>
           </View>
 
@@ -118,9 +161,9 @@ export default function ProfileScreen() {
               <Text style={[styles.sectionTitle, { color: '#3E6B4F' }]}>Contact Information</Text>
             </View>
             <View style={styles.details}>
-              <DetailRow icon="phone" label="Phone" value={business?.phone || `+91 ${phone}`} />
-              <DetailRow icon="place" label="City" value={business?.city ?? ''} />
-              <DetailRow icon="home" label="Address" value={business?.address ?? ''} last />
+              <DetailRow icon="phone" label="Phone" value={verifiedHouse} />
+              <DetailRow icon="place" label="City" value={businessCity} />
+              <DetailRow icon="home" label="Address" value={businessAddress} last />
             </View>
           </View>
 
@@ -132,6 +175,8 @@ export default function ProfileScreen() {
           </Pressable>
 
           <Text style={styles.versionText}>Craft Flow · v1.0.0</Text>
+          </>
+          )}
         </ScrollView>
       </SafeAreaView>
 

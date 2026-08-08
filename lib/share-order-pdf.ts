@@ -217,7 +217,7 @@ export function buildOrderReceiptHtml(order: ApiOrderDetail): string {
             </table>`}
         <div class="totals">
           <div class="row"><span class="k">Total Amount</span><span class="v">${formatRupees(order.total_amount)}</span></div>
-          <div class="row"><span class="k">Advance Received</span><span class="v pos">${formatRupees(order.advance_paid)}</span></div>
+          <div class="row"><span class="k">Amount Received</span><span class="v pos">${formatRupees(order.advance_paid)}</span></div>
           <div class="grand"><span>Balance Due</span><span>${formatRupees(order.balance_due)}</span></div>
         </div>
       </div>

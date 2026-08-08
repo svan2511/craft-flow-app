@@ -49,6 +49,8 @@ function toDateInput(date: Date): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+const MAX_DESIGN_IMAGES = 3;
+
 const QUICK_DATES = [
   { label: '+7 days', days: 7 },
   { label: '+15 days', days: 15 },
@@ -128,9 +130,9 @@ export default function NewOrderScreen() {
       showToast('Photo library access is needed to attach design photos.', { variant: 'error' });
       return;
     }
-    const remaining = Math.max(0, 10 - designImages.length);
+    const remaining = Math.max(0, MAX_DESIGN_IMAGES - designImages.length);
     if (remaining === 0) {
-      showToast('You can add up to 10 design photos.', { variant: 'error' });
+      showToast(`You can add up to ${MAX_DESIGN_IMAGES} design photos.`, { variant: 'error' });
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -149,7 +151,7 @@ export default function NewOrderScreen() {
       uploading: true,
       error: null,
     }));
-    setDesignImages((prev) => [...prev, ...added].slice(0, 10));
+    setDesignImages((prev) => [...prev, ...added].slice(0, MAX_DESIGN_IMAGES));
 
     added.forEach(async (image) => {
       const index = designImages.length + added.indexOf(image);
@@ -388,7 +390,7 @@ export default function NewOrderScreen() {
                   </Pressable>
                 </View>
               ))}
-              {designImages.length < 10 ? (
+              {designImages.length < MAX_DESIGN_IMAGES ? (
                 <Pressable style={styles.photoAddTile} onPress={pickDesignImages}>
                   <Icon name="add_photo_alternate" size={24} color={Palette.primary} />
                   <Text style={styles.photoAddText}>Add</Text>
@@ -396,7 +398,9 @@ export default function NewOrderScreen() {
               ) : null}
             </View>
             {designImages.length > 0 ? (
-              <Text style={styles.photoHint}>{designImages.length} of 10 photos added</Text>
+              <Text style={styles.photoHint}>
+                {designImages.length} of {MAX_DESIGN_IMAGES} photos added
+              </Text>
             ) : null}
           </View>
           <View style={styles.field}>
@@ -423,9 +427,9 @@ export default function NewOrderScreen() {
           </View>
           <View style={styles.field}>
             <Text style={styles.label}>Delivery Date (optional)</Text>
-            <View style={styles.dateInputRow}>
+            <View style={styles.dateInputShell}>
               <TextInput
-                style={[styles.input, styles.dateInput]}
+                style={styles.dateInput}
                 value={deliveryDate}
                 onChangeText={validateDate}
                 placeholder="YYYY-MM-DD"
@@ -433,7 +437,10 @@ export default function NewOrderScreen() {
                 autoCorrect={false}
                 autoCapitalize="none"
               />
-              <Pressable style={styles.datePickerButton} onPress={() => setShowDatePicker(!showDatePicker)} hitSlop={8}>
+              <Pressable
+                style={styles.datePickerButton}
+                onPress={() => setShowDatePicker(!showDatePicker)}
+                hitSlop={8}>
                 <Icon name="calendar_month" size={22} color={Palette.primary} />
               </Pressable>
             </View>
@@ -649,19 +656,29 @@ const styles = StyleSheet.create({
     gap: 8,
     flexWrap: 'wrap',
   },
-  dateInputRow: {
+  dateInputShell: {
     flexDirection: 'row',
-    gap: 10,
+    alignItems: 'center',
+    height: 52,
+    borderWidth: 2,
+    borderColor: Palette.outlineVariant,
+    borderRadius: 14,
+    backgroundColor: Palette.surfaceContainerLowest,
+    overflow: 'hidden',
   },
   dateInput: {
     flex: 1,
+    height: '100%',
+    paddingHorizontal: 14,
+    color: Palette.onSurface,
+    fontFamily: 'Poppins_500Medium',
+    fontSize: 16,
   },
   datePickerButton: {
     width: 52,
-    height: 52,
-    borderWidth: 2,
-    borderColor: Palette.primary,
-    borderRadius: 14,
+    alignSelf: 'stretch',
+    borderLeftWidth: 2,
+    borderLeftColor: Palette.outlineVariant,
     backgroundColor: Palette.primaryContainer,
     alignItems: 'center',
     justifyContent: 'center',

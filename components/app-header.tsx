@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import { useRouter } from 'expo-router';
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -16,6 +17,7 @@ export function AppHeader({
   onBack?: () => void;
   right?: ReactNode;
 }) {
+  const router = useRouter();
   return (
     <View style={styles.header}>
       <View style={styles.left}>
@@ -34,7 +36,7 @@ export function AppHeader({
         </Text>
       </View>
       {right ?? (
-        <Pressable style={styles.iconButton} hitSlop={8}>
+        <Pressable onPress={() => router.push('/settings')} style={styles.iconButton} hitSlop={8}>
           <Icon name="settings" size={26} color={Palette.primary} />
         </Pressable>
       )}

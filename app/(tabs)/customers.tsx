@@ -1,6 +1,6 @@
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { Pressable, RefreshControl, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useCallback, useRef, useState } from 'react';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { Screen } from '@/components/screen';
 import { Icon } from '@/components/ui/icon';
@@ -10,6 +10,7 @@ import { Palette, Radius, Spacing, Type } from '@/constants/theme';
 import { apiRequest } from '@/lib/api';
 import { formatRupees } from '@/lib/format';
 import { useFocusApi } from '@/lib/use-focus-api';
+import { useTabScrollToTop } from '@/lib/use-tab-scroll-top';
 
 type ApiCustomer = {
   id: number;
@@ -35,6 +36,8 @@ function initials(name: string): string {
 export default function CustomersScreen() {
   const [query, setQuery] = useState('');
   const [onlyPending, setOnlyPending] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
+  useTabScrollToTop(scrollRef);
 
   useFocusEffect(
     useCallback(() => {
@@ -60,6 +63,7 @@ export default function CustomersScreen() {
 
   return (
     <Screen
+      scrollRef={scrollRef}
       refreshControl={
         <RefreshControl refreshing={loading && !!data} onRefresh={reload} tintColor={Palette.primary} />
       }>

@@ -1,10 +1,21 @@
-import { useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import {
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 
 import { Icon } from '@/components/ui/icon';
 import { useToast } from '@/components/toast-provider';
 import { Palette, Radius, Spacing, Type } from '@/constants/theme';
 import { apiRequest } from '@/lib/api';
+import { formatRupees } from '@/lib/format';
 
 const TYPES: { key: string; label: string }[] = [
   { key: 'order_advance', label: 'Advance' },
@@ -19,29 +30,63 @@ const MODES: { key: string; label: string }[] = [
   { key: 'cheque', label: 'Cheque' },
 ];
 
+const DEFAULT_ADVANCE_PAID = false;
+const DEFAULT_TYPE_ADVANCE = 'order_advance';
+const DEFAULT_TYPE_AFTER_ADVANCE = 'order_milestone';
+
+/**
+ * A customer order can only ever receive ONE advance. Once an `order_advance`
+ * payment exists (set when the order is created or recorded later), the
+ * "Advance" chip is disabled and only Milestone / Balance remain selectable.
+ */
 export function PaymentModal({
   visible,
   orderId,
   suggestedAmount,
+  maxAmount,
+  advancePaid,
   onClose,
   onSaved,
 }: {
   visible: boolean;
   orderId: number;
   suggestedAmount: number;
+  maxAmount: number;
+  advancePaid?: boolean;
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const hasAdvance = advancePaid ?? DEFAULT_ADVANCE_PAID;
+  const initialType = hasAdvance ? DEFAULT_TYPE_AFTER_ADVANCE : DEFAULT_TYPE_ADVANCE;
+
   const [amount, setAmount] = useState(suggestedAmount > 0 ? String(suggestedAmount) : '');
-  const [type, setType] = useState('order_advance');
+  const [type, setType] = useState(initialType);
   const [mode, setMode] = useState('cash');
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const { showToast } = useToast();
 
+  useEffect(() => {
+    if (visible) {
+      setAmount(suggestedAmount > 0 ? String(suggestedAmount) : '');
+      setType(hasAdvance ? DEFAULT_TYPE_AFTER_ADVANCE : DEFAULT_TYPE_ADVANCE);
+      setMode('cash');
+      setNote('');
+    }
+  }, [visible, suggestedAmount, hasAdvance]);
+
+  const clampAmount = (text: string) => {
+    const clean = text.replace(/[^\d.]/g, '');
+    const value = parseFloat(clean);
+    if (Number.isFinite(value) && maxAmount > 0 && value > maxAmount) {
+      return String(maxAmount);
+    }
+    return clean;
+  };
+
   const close = () => {
     setAmount(suggestedAmount > 0 ? String(suggestedAmount) : '');
-    setType('order_advance');
+    setType(initialType);
     setMode('cash');
     setNote('');
     onClose();
@@ -51,6 +96,12 @@ export function PaymentModal({
     const value = parseFloat(amount);
     if (!Number.isFinite(value) || value <= 0) {
       showToast('Please enter a valid amount greater than zero.', { variant: 'error' });
+      return;
+    }
+    if (maxAmount > 0 && value > maxAmount) {
+      showToast(`Payment cannot exceed the remaining due of ${formatRupees(maxAmount)}.`, {
+        variant: 'error',
+      });
       return;
     }
     setSubmitting(true);
@@ -78,95 +129,127 @@ export function PaymentModal({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={close}>
-      <View style={styles.backdrop}>
-        <View style={styles.content}>
-          <View style={styles.headerRow}>
-            <View style={styles.iconWrap}>
-              <Icon name="payments" size={22} color={Palette.primary} />
+      <KeyboardAvoidingView
+        style={styles.backdrop}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView
+          contentContainerStyle={styles.backdropInner}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}>
+          <View style={styles.content}>
+            <View style={styles.headerRow}>
+              <View style={styles.iconWrap}>
+                <Icon name="payments" size={22} color={Palette.primary} />
+              </View>
+              <View style={styles.headerText}>
+                <Text style={styles.title}>Record Payment</Text>
+                <Text style={styles.subtitle}>Order #{orderId}</Text>
+              </View>
             </View>
-            <View style={styles.headerText}>
-              <Text style={styles.title}>Record Payment</Text>
-              <Text style={styles.subtitle}>Order #{orderId}</Text>
+
+            <View>
+              <Text style={styles.label}>Amount (₹)</Text>
+              <TextInput
+                style={styles.input}
+                value={amount}
+                onChangeText={(t) => setAmount(clampAmount(t))}
+                placeholder="0"
+                placeholderTextColor={Palette.outline}
+                keyboardType="decimal-pad"
+                autoFocus
+              />
+              {maxAmount > 0 ? (
+                <Text style={styles.amountHint}>
+                  Remaining due: {formatRupees(maxAmount)}
+                </Text>
+              ) : null}
+            </View>
+
+            <View>
+              <Text style={styles.label}>Payment Type</Text>
+              <View style={styles.segmentRow}>
+                {TYPES.map((t) => {
+                  const disabledAdvance = t.key === 'order_advance' && hasAdvance;
+                  const active = type === t.key;
+                  return (
+                    <Pressable
+                      key={t.key}
+                      onPress={() => setType(t.key)}
+                      disabled={disabledAdvance}
+                      style={[
+                        styles.segmentChip,
+                        active && styles.segmentChipActive,
+                        disabledAdvance && styles.segmentChipDisabled,
+                      ]}>
+                      <Text
+                        style={[
+                          styles.segmentText,
+                          {
+                            color: disabledAdvance
+                              ? Palette.outline
+                              : active
+                                ? Palette.onPrimary
+                                : Palette.onSurfaceVariant,
+                          },
+                        ]}>
+                        {t.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+              {hasAdvance ? (
+                <Text style={styles.advanceHint}>
+                  Advance already recorded. Choose Milestone or Balance instead.
+                </Text>
+              ) : null}
+            </View>
+
+            <View>
+              <Text style={styles.label}>Mode</Text>
+              <View style={styles.segmentRow}>
+                {MODES.map((m) => (
+                  <Pressable
+                    key={m.key}
+                    onPress={() => setMode(m.key)}
+                    style={[styles.segmentChip, mode === m.key && styles.segmentChipActive]}>
+                    <Text
+                      style={[
+                        styles.segmentText,
+                        { color: mode === m.key ? Palette.onPrimary : Palette.onSurfaceVariant },
+                      ]}>
+                      {m.label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+
+            <View>
+              <Text style={styles.label}>Note (optional)</Text>
+              <TextInput
+                style={styles.input}
+                value={note}
+                onChangeText={setNote}
+                placeholder="e.g. Cash advance"
+                placeholderTextColor={Palette.outline}
+              />
+            </View>
+
+            <View style={styles.buttonRow}>
+              <Pressable style={styles.cancelButton} onPress={close} disabled={submitting}>
+                <Text style={styles.cancelText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.submitButton, submitting && styles.buttonDisabled]}
+                onPress={submit}
+                disabled={submitting}>
+                <Text style={styles.submitText}>{submitting ? 'Saving…' : 'Save Payment'}</Text>
+              </Pressable>
             </View>
           </View>
-
-          <View>
-            <Text style={styles.label}>Amount (₹)</Text>
-            <TextInput
-              style={styles.input}
-              value={amount}
-              onChangeText={(t) => setAmount(t.replace(/[^\d.]/g, ''))}
-              placeholder="0"
-              placeholderTextColor={Palette.outline}
-              keyboardType="decimal-pad"
-              autoFocus
-            />
-          </View>
-
-          <View>
-            <Text style={styles.label}>Payment Type</Text>
-            <View style={styles.segmentRow}>
-              {TYPES.map((t) => (
-                <Pressable
-                  key={t.key}
-                  onPress={() => setType(t.key)}
-                  style={[styles.segmentChip, type === t.key && styles.segmentChipActive]}>
-                  <Text
-                    style={[
-                      styles.segmentText,
-                      { color: type === t.key ? Palette.onPrimary : Palette.onSurfaceVariant },
-                    ]}>
-                    {t.label}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          </View>
-
-          <View>
-            <Text style={styles.label}>Mode</Text>
-            <View style={styles.segmentRow}>
-              {MODES.map((m) => (
-                <Pressable
-                  key={m.key}
-                  onPress={() => setMode(m.key)}
-                  style={[styles.segmentChip, mode === m.key && styles.segmentChipActive]}>
-                  <Text
-                    style={[
-                      styles.segmentText,
-                      { color: mode === m.key ? Palette.onPrimary : Palette.onSurfaceVariant },
-                    ]}>
-                    {m.label}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          </View>
-
-          <View>
-            <Text style={styles.label}>Note (optional)</Text>
-            <TextInput
-              style={styles.input}
-              value={note}
-              onChangeText={setNote}
-              placeholder="e.g. Cash advance"
-              placeholderTextColor={Palette.outline}
-            />
-          </View>
-
-          <View style={styles.buttonRow}>
-            <Pressable style={styles.cancelButton} onPress={close} disabled={submitting}>
-              <Text style={styles.cancelText}>Cancel</Text>
-            </Pressable>
-            <Pressable
-              style={[styles.submitButton, submitting && styles.buttonDisabled]}
-              onPress={submit}
-              disabled={submitting}>
-              <Text style={styles.submitText}>{submitting ? 'Saving…' : 'Save Payment'}</Text>
-            </Pressable>
-          </View>
-        </View>
-      </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -175,8 +258,11 @@ const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.45)',
-    alignItems: 'center',
+  },
+  backdropInner: {
+    flexGrow: 1,
     justifyContent: 'center',
+    alignItems: 'center',
     padding: 24,
   },
   content: {
@@ -220,6 +306,12 @@ const styles = StyleSheet.create({
     color: Palette.onSurfaceVariant,
     marginBottom: 6,
   },
+  amountHint: {
+    ...Type.labelBold,
+    color: Palette.onSurfaceVariant,
+    marginTop: 6,
+    fontFamily: 'Poppins_500Medium',
+  },
   input: {
     height: 52,
     paddingHorizontal: 14,
@@ -248,6 +340,17 @@ const styles = StyleSheet.create({
   segmentChipActive: {
     backgroundColor: Palette.primary,
     borderColor: Palette.primary,
+  },
+  segmentChipDisabled: {
+    opacity: 0.4,
+    borderColor: Palette.outlineVariant,
+    borderStyle: 'dashed',
+  },
+  advanceHint: {
+    ...Type.labelBold,
+    color: Palette.onSurfaceVariant,
+    marginTop: 6,
+    fontFamily: 'Poppins_500Medium',
   },
   segmentText: {
     ...Type.labelBold,

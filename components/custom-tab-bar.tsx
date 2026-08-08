@@ -36,12 +36,10 @@ export function CustomTabBar({ state, descriptors, navigation }: BottomTabBarPro
     const x = tabWidth * state.index + tabWidth / 2 - 4;
     indicatorX.value = withSpring(x, { damping: 18, stiffness: 240, mass: 0.7 });
 
-    if (state.index >= VISIBLE_TABS - 1) {
-      scrollRef.current?.scrollTo({ x: (state.index - (VISIBLE_TABS - 1)) * tabWidth, animated: true });
-    } else {
-      scrollRef.current?.scrollTo({ x: 0, animated: true });
-    }
-  }, [state.index, tabWidth, indicatorX]);
+    const maxOffset = Math.max(count - VISIBLE_TABS, 0);
+    const targetTab = Math.min(Math.max(state.index - VISIBLE_TABS / 2, 0), maxOffset);
+    scrollRef.current?.scrollTo({ x: targetTab * tabWidth, animated: true });
+  }, [state.index, tabWidth, indicatorX, count]);
 
   const indicatorStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: indicatorX.value }],

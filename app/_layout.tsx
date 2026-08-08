@@ -58,6 +58,9 @@ export default function RootLayout() {
             <Stack.Screen name="login" />
             <Stack.Screen name="onboarding" />
             <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="settings" />
+            <Stack.Screen name="help" />
+            <Stack.Screen name="about" />
           </Stack>
           {!splashDone ? <AnimatedSplash onDone={() => setSplashDone(true)} /> : null}
           <StatusBar style="dark" />
