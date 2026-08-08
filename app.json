@@ -1,11 +1,11 @@
 {
   "expo": {
     "name": "Craft Flow",
-    "slug": "wood-mobile-app",
+    "slug": "craft-flow",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/logo.png",
-    "scheme": "woodmobileapp",
+    "scheme": "craftflow",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -44,6 +44,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "b276996b-3a6f-4294-85aa-cec8c5119c40"
+      }
     }
   }
 }
