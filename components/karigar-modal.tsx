@@ -11,6 +11,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Icon } from '@/components/ui/icon';
 import { Palette, Radius, Spacing, Type } from '@/constants/theme';
@@ -19,18 +20,18 @@ const HEADER_GRADIENT = [Palette.primary, '#6E552A'] as const;
 const GOLD_SOFT = 'rgba(138,109,59,0.14)';
 const GOLD_LINE = 'rgba(138,109,59,0.38)';
 
-const ROLE_OPTIONS = [
-  { label: 'Carpenter', icon: 'construction' },
-  { label: 'Carving Master', icon: 'handyman' },
-  { label: 'Turner', icon: 'auto_graph' },
-  { label: 'Polisher', icon: 'format_paint' },
-  { label: 'Painter', icon: 'brush' },
-  { label: 'Designer', icon: 'insights' },
-  { label: 'Finisher', icon: 'check_circle' },
-  { label: 'Inlay Artist', icon: 'workspace_premium' },
-  { label: 'Assistant', icon: 'person' },
-  { label: 'Helper', icon: 'work' },
-] as const;
+const ROLE_OPTIONS: { value: string; labelKey: string; icon: string }[] = [
+  { value: 'Carpenter', labelKey: 'karigarModal.carpenter', icon: 'construction' },
+  { value: 'Carving Master', labelKey: 'karigarModal.carvingMaster', icon: 'handyman' },
+  { value: 'Turner', labelKey: 'karigarModal.turner', icon: 'auto_graph' },
+  { value: 'Polisher', labelKey: 'karigarModal.polisher', icon: 'format_paint' },
+  { value: 'Painter', labelKey: 'karigarModal.painter', icon: 'brush' },
+  { value: 'Designer', labelKey: 'karigarModal.designer', icon: 'insights' },
+  { value: 'Finisher', labelKey: 'karigarModal.finisher', icon: 'check_circle' },
+  { value: 'Inlay Artist', labelKey: 'karigarModal.inlayArtist', icon: 'workspace_premium' },
+  { value: 'Assistant', labelKey: 'karigarModal.assistant', icon: 'person' },
+  { value: 'Helper', labelKey: 'karigarModal.helper', icon: 'work' },
+];
 
 function Field({
   icon,
@@ -55,11 +56,12 @@ function Field({
   gold?: boolean;
   error?: string;
 }) {
+  const { t } = useTranslation();
   return (
     <View>
       <View style={styles.fieldLabelRow}>
         <Text style={styles.fieldLabel}>{label}</Text>
-        {required ? <Text style={styles.fieldRequired}>Required</Text> : null}
+        {required ? <Text style={styles.fieldRequired}>{t('karigarModal.required')}</Text> : null}
       </View>
       <View style={[styles.inputShell, gold && styles.inputShellGold, error && styles.inputShellError]}>
         <View style={[styles.inputIconWrap, gold && styles.inputIconWrapGold]}>
@@ -97,6 +99,7 @@ export function KarigarModal({
   onSubmit: (data: { name: string; role?: string; phone?: string; default_rate: number }) => void;
   submitLoading?: boolean;
 }) {
+  const { t } = useTranslation();
   const [name, setName] = useState('');
   const [role, setRole] = useState('Carpenter');
   const [defaultRate, setDefaultRate] = useState('');
@@ -134,16 +137,16 @@ export function KarigarModal({
     const next: typeof errors = {};
 
     if (name.trim().length === 0) {
-      next.name = 'Karigar name is required.';
+      next.name = t('karigarModal.nameRequired');
     }
 
     const rate = parseFloat(defaultRate);
     if (defaultRate.trim() === '' || !Number.isFinite(rate) || rate < 0) {
-      next.default_rate = 'Enter the rate this karigar works at.';
+      next.default_rate = t('karigarModal.rateRequired');
     }
 
     if (phone.trim() !== '' && phone.trim().length !== 10) {
-      next.phone = 'Phone must be a 10-digit number.';
+      next.phone = t('karigarModal.phoneError');
     }
 
     setErrors(next);
@@ -176,7 +179,7 @@ export function KarigarModal({
               </View>
             </View>
             <View style={styles.headerText}>
-              <Text style={styles.title}>Add Karigar</Text>
+              <Text style={styles.title}>{t('karigarModal.addKarigar')}</Text>
             </View>
             <Pressable onPress={close} style={styles.closeButton} hitSlop={8}>
               <Icon name="remove" size={20} color={Palette.onPrimary} />
@@ -192,8 +195,8 @@ export function KarigarModal({
             <View style={styles.fields}>
               <Field
                 icon="person"
-                label="Full Name"
-                placeholder="e.g. Suresh Kumar"
+                label={t('karigarModal.fullName')}
+                placeholder={t('karigarModal.namePlaceholder')}
                 value={name}
                 onChangeText={(t) => {
                   setName(t);
@@ -205,14 +208,14 @@ export function KarigarModal({
               />
 
               <View>
-                <Text style={styles.fieldLabel}>Select Role</Text>
+                <Text style={styles.fieldLabel}>{t('karigarModal.selectRole')}</Text>
                 <View style={styles.roleGrid}>
                   {ROLE_OPTIONS.map((opt) => {
-                    const active = role === opt.label;
+                    const active = role === opt.value;
                     return (
                       <Pressable
-                        key={opt.label}
-                        onPress={() => setRole(active ? '' : opt.label)}
+                        key={opt.value}
+                        onPress={() => setRole(active ? '' : opt.value)}
                         style={[
                           styles.roleChip,
                           active && styles.roleChipActive,
@@ -227,7 +230,7 @@ export function KarigarModal({
                             styles.roleChipText,
                             { color: active ? Palette.onPrimary : Palette.onSurfaceVariant },
                           ]}>
-                          {opt.label}
+                          {t(opt.labelKey)}
                         </Text>
                       </Pressable>
                     );
@@ -237,8 +240,8 @@ export function KarigarModal({
 
               <Field
                 icon="payments"
-                label="Default Rate (₹)"
-                placeholder="e.g. 1500"
+                label={t('karigarModal.defaultRate')}
+                placeholder={t('karigarModal.ratePlaceholder')}
                 value={defaultRate}
                 onChangeText={(t) => {
                   setDefaultRate(t.replace(/[^\d.]/g, ''));
@@ -252,8 +255,8 @@ export function KarigarModal({
 
               <Field
                 icon="phone"
-                label="Phone (Optional)"
-                placeholder="10-digit mobile number"
+                label={t('karigarModal.phoneOptional')}
+                placeholder={t('karigarModal.phonePlaceholder')}
                 value={phone}
                 onChangeText={(t) => {
                   setPhone(t.replace(/[^\d]/g, '').slice(0, 10));
@@ -267,7 +270,7 @@ export function KarigarModal({
 
           <View style={styles.buttonRow}>
             <Pressable style={styles.cancelButton} onPress={close} disabled={submitLoading}>
-              <Text style={styles.cancelText}>Cancel</Text>
+              <Text style={styles.cancelText}>{t('common.cancel')}</Text>
             </Pressable>
             <LinearGradient
               colors={[...HEADER_GRADIENT]}
@@ -281,7 +284,7 @@ export function KarigarModal({
                 disabled={submitLoading}>
                 <Icon name="workspace_premium" size={20} color={Palette.onPrimary} />
                 <Text style={styles.submitText}>
-                  {submitLoading ? 'Saving…' : 'Add Karigar'}
+                  {submitLoading ? t('common.saving') : t('karigarModal.addKarigar')}
                 </Text>
               </Pressable>
             </LinearGradient>

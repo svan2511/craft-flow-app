@@ -2,7 +2,7 @@ import * as Print from 'expo-print';
 import { shareAsync } from 'expo-sharing';
 
 import { formatDate, formatRupees } from '@/lib/format';
-import { orderStatusMeta, type ApiOrderDetail } from '@/lib/order-status';
+import { orderStatusMeta, type ApiOrderDetail, type Translator } from '@/lib/order-status';
 
 const PRIMARY = '#8A6D3B';
 const SECONDARY = '#7A6A4F';
@@ -23,8 +23,8 @@ function esc(value: string): string {
 // customer bill. Karigar transactions are internal accounting.
 const CUSTOMER_PAYMENT_TYPES = new Set(['order_advance', 'order_milestone', 'order_balance']);
 
-export function buildOrderReceiptHtml(order: ApiOrderDetail): string {
-  const status = orderStatusMeta(order.status);
+export function buildOrderReceiptHtml(order: ApiOrderDetail, t: Translator): string {
+  const status = orderStatusMeta(t, order.status);
   const customerPayments = order.payments.filter((p) => CUSTOMER_PAYMENT_TYPES.has(p.type));
   const paymentsRows = customerPayments
     .map(
@@ -181,7 +181,7 @@ export function buildOrderReceiptHtml(order: ApiOrderDetail): string {
     <div class="brand">
       <div>
         <div class="brand-name">${esc(order.workshop?.name ?? 'Craft Flow')}</div>
-        <div class="brand-sub">${order.workshop?.phone ? `Phone: +91 ${esc(order.workshop.phone)}` : ''}</div>
+        <div class="brand-sub">${order.workshop?.phone ? t('pdf.phoneLabel', { phone: esc(order.workshop.phone) }) : ''}</div>
         ${order.workshop?.address
           ? `<div class="brand-address">${esc(order.workshop.address)}${order.workshop.city ? `, ${esc(order.workshop.city)}` : ''}</div>`
           : order.workshop?.city
@@ -191,48 +191,48 @@ export function buildOrderReceiptHtml(order: ApiOrderDetail): string {
       <div class="order-badge">#${esc(order.order_no)}</div>
     </div>
 
-    <div class="title">ORDER RECEIPT</div>
+    <div class="title">${t('pdf.orderReceipt')}</div>
     <div class="subtitle">${esc(status.label)} • ${formatDate(order.created_at)}</div>
 
     ${imageBlock ? `<div style="margin-bottom:12px;">${imageBlock}</div>` : ''}
 
     <div class="section">
-      <div class="section-title">Customer</div>
+      <div class="section-title">${t('pdf.customer')}</div>
       <div class="box">
-        <div class="row"><span class="k">Name</span><span class="v">${esc(order.customer?.name ?? '—')}</span></div>
-        <div class="row"><span class="k">Phone</span><span class="v">${order.customer?.phone ? `+91 ${esc(order.customer.phone)}` : '—'}</span></div>
-        <div class="row"><span class="k">Item</span><span class="v">${esc(order.item_name)}</span></div>
-        <div class="row"><span class="k">Delivery</span><span class="v">${order.delivery_date ? formatDate(order.delivery_date) : 'Not set'}</span></div>
+        <div class="row"><span class="k">${t('pdf.name')}</span><span class="v">${esc(order.customer?.name ?? '—')}</span></div>
+        <div class="row"><span class="k">${t('pdf.phone')}</span><span class="v">${order.customer?.phone ? `+91 ${esc(order.customer.phone)}` : '—'}</span></div>
+        <div class="row"><span class="k">${t('pdf.item')}</span><span class="v">${esc(order.item_name)}</span></div>
+        <div class="row"><span class="k">${t('pdf.delivery')}</span><span class="v">${order.delivery_date ? formatDate(order.delivery_date) : t('pdf.notSet')}</span></div>
       </div>
     </div>
 
     <div class="section">
-      <div class="section-title">Payments</div>
+      <div class="section-title">${t('pdf.payments')}</div>
       <div class="box">
         ${customerPayments.length === 0
-          ? `<div class="muted" style="font-size:12.5px;">No payments recorded yet.</div>`
+          ? `<div class="muted" style="font-size:12.5px;">${t('pdf.noPayments')}</div>`
           : `<table>
-              <thead><tr><th>Type</th><th>Date</th><th class="td-num">Mode</th><th class="td-num">Amount</th></tr></thead>
+              <thead><tr><th>${t('pdf.type')}</th><th>${t('pdf.date')}</th><th class="td-num">${t('pdf.mode')}</th><th class="td-num">${t('pdf.amount')}</th></tr></thead>
               <tbody>${paymentsRows}</tbody>
             </table>`}
         <div class="totals">
-          <div class="row"><span class="k">Total Amount</span><span class="v">${formatRupees(order.total_amount)}</span></div>
-          <div class="row"><span class="k">Amount Received</span><span class="v pos">${formatRupees(order.advance_paid)}</span></div>
-          <div class="grand"><span>Balance Due</span><span>${formatRupees(order.balance_due)}</span></div>
+          <div class="row"><span class="k">${t('pdf.totalAmount')}</span><span class="v">${formatRupees(order.total_amount)}</span></div>
+          <div class="row"><span class="k">${t('pdf.amountReceived')}</span><span class="v pos">${formatRupees(order.advance_paid)}</span></div>
+          <div class="grand"><span>${t('pdf.balanceDue')}</span><span>${formatRupees(order.balance_due)}</span></div>
         </div>
       </div>
     </div>
 
     ${order.customization_notes
       ? `<div class="section">
-          <div class="section-title">Customization Notes</div>
+          <div class="section-title">${t('pdf.customizationNotes')}</div>
           <div class="notes">${esc(order.customization_notes)}</div>
         </div>`
       : ''}
 
     <div class="footer">
-      Thank you for your business!<br />
-      Generated by Craft Flow
+      ${t('pdf.thankYou')}<br />
+      ${t('pdf.generatedBy')}
     </div>
     </div>
   </div>
@@ -240,13 +240,13 @@ export function buildOrderReceiptHtml(order: ApiOrderDetail): string {
 </html>`;
 }
 
-export async function shareOrderPdf(order: ApiOrderDetail): Promise<void> {
+export async function shareOrderPdf(order: ApiOrderDetail, t: Translator): Promise<void> {
   const { uri } = await Print.printToFileAsync({
-    html: buildOrderReceiptHtml(order),
+    html: buildOrderReceiptHtml(order, t),
   });
 
   await shareAsync(uri, {
     mimeType: 'application/pdf',
-    dialogTitle: `Share order #${order.order_no}`,
+    dialogTitle: t('pdf.shareOrderTitle', { no: order.order_no }),
   });
 }

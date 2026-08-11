@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { JobCard } from '@/components/job-card';
 import { Screen } from '@/components/screen';
@@ -14,17 +15,18 @@ import { orderStatusMeta, type ApiOrder, type ApiOrderStatus } from '@/lib/order
 import { useFocusApi } from '@/lib/use-focus-api';
 import { useTabScrollToTop } from '@/lib/use-tab-scroll-top';
 
-const FILTERS: { label: string; status: ApiOrderStatus | '*' }[] = [
-  { label: 'All', status: '*' },
-  { label: 'New', status: 'new' },
-  { label: 'Completed', status: 'ready' },
-  { label: 'Delivered', status: 'completed' },
+const FILTERS = (t: (k: string) => string): { label: string; status: ApiOrderStatus | '*' }[] => [
+  { label: t('jobCards.all'), status: '*' },
+  { label: t('dashboard.new'), status: 'new' },
+  { label: t('dashboard.completed'), status: 'ready' },
+  { label: t('dashboard.delivered'), status: 'completed' },
 ];
 
 type OrdersResponse = { orders: ApiOrder[]; count: number };
 
 export default function JobCardsScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<ApiOrderStatus | '*'>('*');
   const scrollRef = useRef<ScrollView>(null);
@@ -62,9 +64,9 @@ export default function JobCardsScreen() {
       ) : hasNoJobs ? (
         <RoyalEmpty
           icon="workspace_premium"
-          title="No Orders Found"
-          subtitle="Your workshop has no craft orders yet."
-          tagline="New orders will soon grace this gallery."
+          title={t('jobCards.noOrdersTitle')}
+          subtitle={t('jobCards.noOrdersSubtitle')}
+          tagline={t('jobCards.noOrdersTagline')}
         />
       ) : (
         <>
@@ -72,7 +74,7 @@ export default function JobCardsScreen() {
         <Icon name="search" size={22} color={Palette.outline} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search Order ID or Customer Name"
+          placeholder={t('jobCards.search')}
           placeholderTextColor={Palette.onSurfaceVariant}
           value={query}
           onChangeText={setQuery}
@@ -84,7 +86,7 @@ export default function JobCardsScreen() {
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.filterRow}>
-        {FILTERS.map((item) => {
+        {FILTERS(t).map((item) => {
           const active = item.status === filter;
           return (
             <Pressable
@@ -103,15 +105,15 @@ export default function JobCardsScreen() {
 
       <View style={styles.list}>
         {visibleJobs.map((job) => {
-          const status = orderStatusMeta(job.status);
+          const status = orderStatusMeta(t, job.status);
           return (
             <JobCard
               key={job.id}
-              orderId={`Order #${job.order_no}`}
+              orderId={t('jobCards.orderPrefix', { id: job.order_no })}
               title={job.item_name}
               statusVariant={status.variant}
               customer={job.customer?.name ?? '—'}
-              worker={job.karigar?.name ?? 'Not assigned'}
+              worker={job.karigar?.name ?? t('common.notAssigned')}
               total={formatRupees(job.total_amount)}
               paid={formatRupees(job.advance_paid)}
               due={formatRupees(job.balance_due)}
@@ -121,7 +123,7 @@ export default function JobCardsScreen() {
           );
         })}
         {visibleJobs.length === 0 && !loading && !error ? (
-          <Text style={styles.emptyText}>No orders match your search.</Text>
+          <Text style={styles.emptyText}>{t('jobCards.noMatch')}</Text>
         ) : null}
       </View>
         </>

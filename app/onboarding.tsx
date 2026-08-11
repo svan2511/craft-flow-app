@@ -14,6 +14,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 
 import { Icon } from '@/components/ui/icon';
 import { Palette, Radius, Type } from '@/constants/theme';
@@ -21,12 +22,6 @@ import { ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 
 const BG_GRADIENT = ['#FFF9F1', '#FCF5EC', '#F7EBD8'] as const;
-
-const benefits = [
-  { icon: 'security', label: 'Private & Secure' },
-  { icon: 'verified_user', label: 'One-time setup' },
-  { icon: 'bolt', label: 'Instant start' },
-];
 
 function FormField({
   icon,
@@ -50,11 +45,12 @@ function FormField({
   multiline?: boolean;
 }) {
   const [focused, setFocused] = useState(false);
+  const { t } = useTranslation();
 
   return (
     <View style={styles.field}>
       <Text style={styles.fieldLabel}>
-        {label} {optional ? <Text style={styles.optionalMark}>(optional)</Text> : null}
+        {label} {optional ? <Text style={styles.optionalMark}>{t('common.optional')}</Text> : null}
       </Text>
       <View
         style={[
@@ -87,6 +83,7 @@ function FormField({
 
 export default function OnboardingScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { phone, saveBusiness } = useAuth();
 
   const [workshopName, setWorkshopName] = useState('');
@@ -118,7 +115,7 @@ export default function OnboardingScreen() {
 
   const onSave = async () => {
     if (workshopName.trim().length === 0 || ownerName.trim().length === 0 || city.trim().length === 0) {
-      setError('Please fill all the required fields.');
+      setError(t('auth.fillRequired'));
       return;
     }
     setError('');
@@ -133,7 +130,7 @@ export default function OnboardingScreen() {
       });
       router.replace('/(tabs)');
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Could not save workshop. Please try again.');
+      setError(e instanceof ApiError ? e.message : t('auth.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -174,39 +171,39 @@ export default function OnboardingScreen() {
             <Animated.View style={[styles.header, headerStyle]}>
               <View style={styles.badge}>
                 <Icon name="workspace_premium" size={14} color={Palette.primary} />
-                <Text style={styles.badgeText}>BUSINESS SETUP</Text>
+                <Text style={styles.badgeText}>{t('auth.businessSetup')}</Text>
               </View>
               <Text style={styles.subtitle}>
-                Add your business details to get started. This is done only once.
+                {t('auth.setupSubtitle')}
               </Text>
             </Animated.View>
 
             <Animated.View style={[styles.card, cardStyle]}>
               <FormField
                 icon="store"
-                label="Workshop / Business Name"
+                label={t('auth.workshopName')}
                 value={workshopName}
                 onChangeText={setWorkshopName}
                 placeholder="e.g. Verma Furniture Workshop"
               />
               <FormField
                 icon="person"
-                label="Owner Name"
+                label={t('auth.ownerName')}
                 value={ownerName}
                 onChangeText={setOwnerName}
                 placeholder="e.g. Ramesh Verma"
               />
               <FormField
                 icon="place"
-                label="City"
+                label={t('auth.city')}
                 value={city}
                 onChangeText={setCity}
                 placeholder="e.g. Saharanpur"
               />
-              <FormField icon="phone" label="Mobile Number" value={phone ?? ''} editable={false} />
+              <FormField icon="phone" label={t('auth.mobileNumber')} value={phone ?? ''} editable={false} />
               <FormField
                 icon="home"
-                label="Address"
+                label={t('auth.address')}
                 value={address}
                 onChangeText={setAddress}
                 placeholder="e.g. 12, Station Road, Saharanpur"
@@ -224,14 +221,18 @@ export default function OnboardingScreen() {
                 onPress={onSave}
                 disabled={saving}>
                 <Text style={styles.saveButtonText}>
-                  {saving ? 'Saving…' : 'Save & Continue'}
+                  {saving ? t('common.saving') : t('common.saveMore')}
                 </Text>
                 <Icon name="arrow_forward" size={18} color={Palette.onSecondary} />
               </Pressable>
             </Animated.View>
 
             <View style={styles.benefitsRow}>
-              {benefits.map((item) => (
+              {[
+                { icon: 'security', label: t('auth.privateSecure') },
+                { icon: 'verified_user', label: t('auth.oneTimeSetup') },
+                { icon: 'bolt', label: t('auth.instantStart') },
+              ].map((item) => (
                 <View key={item.label} style={styles.benefitItem}>
                   <Icon name={item.icon} size={16} color={Palette.secondary} />
                   <Text style={styles.benefitText}>{item.label}</Text>

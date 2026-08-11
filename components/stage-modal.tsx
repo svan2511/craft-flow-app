@@ -10,16 +10,17 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import type { KarigarOption } from '@/components/karigar-assign-modal';
 import { Icon } from '@/components/ui/icon';
 import { Palette, Spacing, Type } from '@/constants/theme';
 import { stageIcon, type ApiOrderStage, type ApiOrderStageStatus } from '@/lib/order-status';
 
-const STAGE_STATUSES: { key: ApiOrderStageStatus; label: string }[] = [
-  { key: 'pending', label: 'Pending' },
-  { key: 'in_progress', label: 'In Progress' },
-  { key: 'completed', label: 'Completed' },
+const STAGE_STATUSES: { key: ApiOrderStageStatus; labelKey: string; hintKey: string }[] = [
+  { key: 'pending', labelKey: 'status.pending', hintKey: 'stageModal.notStartedHint' },
+  { key: 'in_progress', labelKey: 'status.inProgress', hintKey: 'stageModal.inProgressHint' },
+  { key: 'completed', labelKey: 'status.completed', hintKey: 'stageModal.completedHint' },
 ];
 
 export type StageFormData = {
@@ -52,6 +53,7 @@ export function StageModal({
   onSubmit: (data: StageFormData) => void;
   onDelete: () => void;
 }) {
+  const { t } = useTranslation();
   const [karigarId, setKarigarId] = useState<number | null>(null);
   const [karigarOpen, setKarigarOpen] = useState(false);
   const [laborCost, setLaborCost] = useState('');
@@ -114,7 +116,7 @@ export function StageModal({
             </View>
             <View style={styles.headerText}>
               <Text style={styles.title}>{title}</Text>
-              <Text style={styles.subtitle}>Production stage details</Text>
+              <Text style={styles.subtitle}>{t('stageModal.productionStageDetails')}</Text>
             </View>
           </View>
 
@@ -126,7 +128,7 @@ export function StageModal({
 
           <ScrollView showsVerticalScrollIndicator={false} style={styles.scroll}>
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Stage</Text>
+              <Text style={styles.label}>{t('stageModal.stage')}</Text>
               {lockedName ? (
                 <View style={styles.lockedStage}>
                   <View style={styles.lockedStageIcon}>
@@ -135,22 +137,22 @@ export function StageModal({
                   <View style={styles.lockedStageText}>
                     <Text style={styles.lockedStageName}>{lockedName}</Text>
                     <Text style={styles.lockedStageHint}>
-                      Next stage in the production order
+                      {t('stageModal.nextStageHint')}
                     </Text>
                   </View>
                 </View>
               ) : (
                 <Text style={styles.emptyText}>
-                  All production stages for this order have been added.
+                  {t('stageModal.allStagesAdded')}
                 </Text>
               )}
             </View>
 
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Karigar</Text>
+              <Text style={styles.label}>{t('stageModal.karigar')}</Text>
               {karigars.length === 0 ? (
                 <Text style={styles.emptyText}>
-                  No karigars available. Add karigars from the Karigars tab.
+                  {t('stageModal.noKarigars')}
                 </Text>
               ) : (
                 <View>
@@ -172,7 +174,7 @@ export function StageModal({
                         style={
                           selectedKarigar ? styles.pickerName : styles.pickerPlaceholder
                         }>
-                        {selectedKarigar ? selectedKarigar.name : 'Select a karigar'}
+                        {selectedKarigar ? selectedKarigar.name : t('stageModal.selectKarigar')}
                       </Text>
                       {selectedKarigar?.role ? (
                         <Text style={styles.pickerRole}>{selectedKarigar.role}</Text>
@@ -242,7 +244,7 @@ export function StageModal({
 
             {selectedKarigar ? (
               <View style={styles.fieldGroup}>
-                <Text style={styles.label}>Labor Cost (₹)</Text>
+                <Text style={styles.label}>{t('stageModal.laborCost')}</Text>
                 <View style={styles.inputWrap}>
                   <Icon name="money" size={18} color={Palette.primary} />
                   <TextInput
@@ -257,15 +259,18 @@ export function StageModal({
                 {selectedKarigar.default_rate != null ? (
                   <Text style={styles.costHint}>
                     {laborCost === String(selectedKarigar.default_rate)
-                      ? `Using ${selectedKarigar.name}'s rate`
-                      : `${selectedKarigar.name}'s rate: ₹${selectedKarigar.default_rate}`}
+                      ? t('stageModal.usingRate', { name: selectedKarigar.name })
+                      : t('stageModal.rate', {
+                          name: selectedKarigar.name,
+                          rate: selectedKarigar.default_rate,
+                        })}
                   </Text>
                 ) : null}
               </View>
             ) : null}
 
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Status</Text>
+              <Text style={styles.label}>{t('stageModal.status')}</Text>
               <View>
                 <Pressable
                   onPress={() => setStatusOpen((o) => !o)}
@@ -278,13 +283,9 @@ export function StageModal({
                     />
                   </View>
                   <View style={styles.pickerInfo}>
-                    <Text style={styles.pickerName}>{selectedStatus.label}</Text>
+                    <Text style={styles.pickerName}>{t(selectedStatus.labelKey)}</Text>
                     <Text style={styles.pickerRole}>
-                      {status === 'pending'
-                        ? 'Not started yet'
-                        : status === 'in_progress'
-                          ? 'Work in progress'
-                          : 'Work finished'}
+                      {t(selectedStatus.hintKey)}
                     </Text>
                   </View>
                   <Icon
@@ -324,14 +325,10 @@ export function StageModal({
                                   styles.optionName,
                                   { color: active ? Palette.primary : Palette.onSurface },
                                 ]}>
-                                {s.label}
+                                {t(s.labelKey)}
                               </Text>
                               <Text style={styles.optionRole}>
-                                {s.key === 'pending'
-                                  ? 'Not started yet'
-                                  : s.key === 'in_progress'
-                                    ? 'Work in progress'
-                                    : 'Work finished'}
+                                {t(s.hintKey)}
                               </Text>
                             </View>
                           </Pressable>
@@ -343,7 +340,7 @@ export function StageModal({
               </View>
               {statusLocked ? (
                 <Text style={styles.lockedHint}>
-                  Status stays pending until the previous stage is completed.
+                  {t('stageModal.lockedHint')}
                 </Text>
               ) : null}
             </View>
@@ -356,11 +353,11 @@ export function StageModal({
                 onPress={onDelete}
                 disabled={submitLoading}>
                 <Icon name="delete" size={18} color={Palette.error} />
-                <Text style={styles.deleteText}>Delete</Text>
+                <Text style={styles.deleteText}>{t('common.delete')}</Text>
               </Pressable>
             ) : null}
             <Pressable style={styles.cancelButton} onPress={onClose} disabled={submitLoading}>
-              <Text style={styles.cancelText}>Cancel</Text>
+              <Text style={styles.cancelText}>{t('common.cancel')}</Text>
             </Pressable>
             <Pressable
               style={[styles.submitButton, (!canSubmit || submitLoading) && styles.buttonDisabled]}
@@ -373,7 +370,7 @@ export function StageModal({
                 })
               }
               disabled={!canSubmit || submitLoading}>
-              <Text style={styles.submitText}>{submitLoading ? 'Saving…' : 'Save'}</Text>
+              <Text style={styles.submitText}>{submitLoading ? t('common.saving') : t('common.save')}</Text>
             </Pressable>
           </View>
         </View>

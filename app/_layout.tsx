@@ -10,8 +10,14 @@ import 'react-native-reanimated';
 import { AnimatedSplash, SPLASH_BG } from '@/components/animated-splash';
 import { ToastProvider } from '@/components/toast-provider';
 import { AuthProvider } from '@/lib/auth-context';
+import { initI18n } from '@/lib/i18n';
 
 SplashScreen.preventAutoHideAsync();
+
+let i18nReady: Promise<void> | null = null;
+if (!i18nReady) {
+  i18nReady = initI18n();
+}
 
 const appTheme = {
   ...DefaultTheme,
@@ -34,14 +40,22 @@ export default function RootLayout() {
     Poppins_800ExtraBold,
   });
   const [splashDone, setSplashDone] = useState(false);
+  const [i18nLoaded, setI18nLoaded] = useState(false);
 
   useEffect(() => {
-    if (fontsLoaded || fontError) {
+    (async () => {
+      await i18nReady;
+      setI18nLoaded(true);
+    })();
+  }, []);
+
+  useEffect(() => {
+    if ((fontsLoaded || fontError) && i18nLoaded) {
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded, fontError]);
+  }, [fontsLoaded, fontError, i18nLoaded]);
 
-  if (!fontsLoaded && !fontError) {
+  if ((!fontsLoaded && !fontError) || !i18nLoaded) {
     return null;
   }
 

@@ -10,6 +10,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Icon } from '@/components/ui/icon';
 import { Palette, Radius, Spacing, Type } from '@/constants/theme';
@@ -29,7 +30,7 @@ export function KarigarMoneyModal({
   subtitle,
   orders,
   confirmLabel,
-  notePlaceholder = 'e.g. Cash settled',
+  notePlaceholder,
   onClose,
   onSubmit,
   submitLoading = false,
@@ -45,6 +46,7 @@ export function KarigarMoneyModal({
   onSubmit: (amount: number, note: string, orderId: number | null) => void;
   submitLoading?: boolean;
 }) {
+  const { t } = useTranslation();
   const [orderId, setOrderId] = useState<number | null>(null);
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
@@ -111,11 +113,11 @@ export function KarigarMoneyModal({
             </View>
 
             <View>
-              <Text style={styles.label}>Order</Text>
+              <Text style={styles.label}>{t('karigarMoney.order')}</Text>
               {orders.length === 0 ? (
                 <View style={styles.noOrders}>
                   <Text style={styles.noOrdersText}>
-                    No orders assigned to this karigar yet.
+                    {t('karigarMoney.noOrders')}
                   </Text>
                 </View>
               ) : (
@@ -134,12 +136,12 @@ export function KarigarMoneyModal({
                           </Text>
                           {mode === 'settle' ? (
                             <Text style={[styles.pickerHint, { color: Palette.danger }]}>
-                              Pending {formatRupees(selected.pending)}
+                              {t('karigarMoney.pendingAmount', { amount: formatRupees(selected.pending) })}
                             </Text>
                           ) : null}
                         </>
                       ) : (
-                        <Text style={styles.pickerPlaceholder}>Select an order</Text>
+                        <Text style={styles.pickerPlaceholder}>{t('karigarMoney.selectOrder')}</Text>
                       )}
                     </View>
                     <Icon
@@ -181,7 +183,7 @@ export function KarigarMoneyModal({
                                 </Text>
                                 {mode === 'settle' ? (
                                   <Text style={[styles.optionHint, { color: Palette.danger }]}>
-                                    Pending {formatRupees(order.pending)}
+                                    {t('karigarMoney.pendingAmount', { amount: formatRupees(order.pending) })}
                                   </Text>
                                 ) : null}
                               </View>
@@ -196,11 +198,11 @@ export function KarigarMoneyModal({
             </View>
 
             <View>
-              <Text style={styles.label}>Amount (₹)</Text>
+              <Text style={styles.label}>{t('karigarMoney.amount')}</Text>
               <TextInput
                 style={styles.input}
                 value={amount}
-                onChangeText={(t) => setAmount(t.replace(/[^\d.]/g, ''))}
+                onChangeText={(mv) => setAmount(mv.replace(/[^\d.]/g, ''))}
                 placeholder="0"
                 placeholderTextColor={Palette.outline}
                 keyboardType="decimal-pad"
@@ -208,7 +210,7 @@ export function KarigarMoneyModal({
             </View>
 
             <View>
-              <Text style={styles.label}>Note (optional)</Text>
+              <Text style={styles.label}>{t('karigarMoney.noteOptional')}</Text>
               <TextInput
                 style={styles.input}
                 value={note}
@@ -220,13 +222,13 @@ export function KarigarMoneyModal({
 
             <View style={styles.buttonRow}>
               <Pressable style={styles.cancelButton} onPress={close} disabled={submitLoading}>
-                <Text style={styles.cancelText}>Cancel</Text>
+                <Text style={styles.cancelText}>{t('common.cancel')}</Text>
               </Pressable>
               <Pressable
                 style={[styles.submitButton, submitLoading && styles.buttonDisabled]}
                 onPress={submit}
                 disabled={submitLoading}>
-                <Text style={styles.submitText}>{submitLoading ? 'Saving…' : confirmLabel}</Text>
+                <Text style={styles.submitText}>{submitLoading ? t('common.saving') : confirmLabel}</Text>
               </Pressable>
             </View>
           </View>

@@ -2,6 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useCallback, useRef, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 
 import { ConfirmModal } from '@/components/ui/confirm-modal';
 import { Icon } from '@/components/ui/icon';
@@ -35,6 +36,7 @@ function DetailRow({
   value: string;
   last?: boolean;
 }) {
+  const { t } = useTranslation();
   const hasValue = value.length > 0;
   return (
     <View style={[styles.detailRow, !last && styles.detailRowBorder]}>
@@ -44,7 +46,7 @@ function DetailRow({
       <View style={styles.detailText}>
         <Text style={styles.detailLabel}>{label}</Text>
         <Text style={[styles.detailValue, !hasValue && styles.detailValueEmpty]}>
-          {hasValue ? value : 'Not added yet'}
+          {hasValue ? value : t('profile.notAdded')}
         </Text>
       </View>
     </View>
@@ -52,6 +54,7 @@ function DetailRow({
 }
 
 export default function ProfileScreen() {
+  const { t } = useTranslation();
   const { phone, business, logout } = useAuth();
   const [confirming, setConfirming] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -125,7 +128,7 @@ export default function ProfileScreen() {
                 <Text style={styles.heroInitials}>{initials || 'CF'}</Text>
               </View>
               <View style={styles.heroIdentity}>
-                <Text style={styles.heroEyebrow}>WORKSHOP PROFILE</Text>
+                <Text style={styles.heroEyebrow}>{t('profile.workshopProfile')}</Text>
                 <Text style={styles.heroTitle} numberOfLines={1}>
                   {workshopName}
                 </Text>
@@ -136,34 +139,34 @@ export default function ProfileScreen() {
                 <Icon name="verified_user" size={20} color="#3E6B4F" />
               </View>
               <View style={styles.heroVerifiedText}>
-                <Text style={styles.heroVerifiedLabel}>Verified Mobile Number</Text>
+                <Text style={styles.heroVerifiedLabel}>{t('profile.verifiedMobile')}</Text>
                 <Text style={styles.heroVerifiedNumber}>{formatPhone(verifiedNumber)}</Text>
               </View>
               <View style={styles.heroVerifiedTag}>
                 <Icon name="check" size={13} color={Palette.onPrimary} />
-                <Text style={styles.heroVerifiedTagText}>Verified</Text>
+                <Text style={styles.heroVerifiedTagText}>{t('profile.verified')}</Text>
               </View>
             </View>
           </LinearGradient>
 
           <View style={styles.sectionCard}>
             <View style={[styles.sectionHeaderBar, { backgroundColor: 'rgba(138,109,59,0.10)' }]}>
-              <Text style={styles.sectionTitle}>Business Details</Text>
+              <Text style={styles.sectionTitle}>{t('profile.businessDetails')}</Text>
             </View>
             <View style={styles.details}>
-              <DetailRow icon="local_shipping" label="Workshop Name" value={workshopName} />
-              <DetailRow icon="person" label="Owner Name" value={ownerName} last />
+              <DetailRow icon="local_shipping" label={t('profile.workshopName')} value={workshopName} />
+              <DetailRow icon="person" label={t('profile.ownerName')} value={ownerName} last />
             </View>
           </View>
 
           <View style={styles.sectionCard}>
             <View style={[styles.sectionHeaderBar, { backgroundColor: 'rgba(62,107,79,0.10)' }]}>
-              <Text style={[styles.sectionTitle, { color: '#3E6B4F' }]}>Contact Information</Text>
+              <Text style={[styles.sectionTitle, { color: '#3E6B4F' }]}>{t('profile.contactInfo')}</Text>
             </View>
             <View style={styles.details}>
-              <DetailRow icon="phone" label="Phone" value={verifiedHouse} />
-              <DetailRow icon="place" label="City" value={businessCity} />
-              <DetailRow icon="home" label="Address" value={businessAddress} last />
+              <DetailRow icon="phone" label={t('profile.phone')} value={verifiedHouse} />
+              <DetailRow icon="place" label={t('profile.city')} value={businessCity} />
+              <DetailRow icon="home" label={t('profile.address')} value={businessAddress} last />
             </View>
           </View>
 
@@ -171,10 +174,10 @@ export default function ProfileScreen() {
             style={({ pressed }) => [styles.logoutButton, pressed && styles.logoutPressed]}
             onPress={() => setConfirming(true)}>
             <Icon name="logout" size={20} color={Palette.error} />
-            <Text style={styles.logoutText}>Log out</Text>
+            <Text style={styles.logoutText}>{t('profile.logout')}</Text>
           </Pressable>
 
-          <Text style={styles.versionText}>Craft Flow · v1.0.0</Text>
+          <Text style={styles.versionText}>{t('profile.version')}</Text>
           </>
           )}
         </ScrollView>
@@ -183,9 +186,9 @@ export default function ProfileScreen() {
       <ConfirmModal
         visible={confirming}
         icon="logout"
-        title="Log out of Craft Flow?"
-        message="You will need to verify your number again to sign back in. Your business data stays safe."
-        confirmLabel="Log out"
+        title={t('profile.logoutTitle')}
+        message={t('profile.logoutMessage')}
+        confirmLabel={t('profile.logout')}
         variant="danger"
         submitting={loggingOut}
         onCancel={() => setConfirming(false)}

@@ -1,6 +1,7 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Screen } from '@/components/screen';
 import { Icon } from '@/components/ui/icon';
@@ -34,6 +35,7 @@ function initials(name: string): string {
 }
 
 export default function CustomersScreen() {
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [onlyPending, setOnlyPending] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
@@ -72,9 +74,9 @@ export default function CustomersScreen() {
       ) : hasNoCustomers ? (
         <RoyalEmpty
           icon="groups"
-          title="No Customers Found"
-          subtitle="Your customer list is empty."
-          tagline="Customers are the heart of any craft workshop."
+          title={t('customers.emptyTitle')}
+          subtitle={t('customers.emptySubtitle')}
+          tagline={t('customers.emptyTagline')}
         />
       ) : (
         <>
@@ -82,7 +84,7 @@ export default function CustomersScreen() {
         <Icon name="search" size={22} color={Palette.outline} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search by name or phone"
+          placeholder={t('customers.searchPlaceholder')}
           placeholderTextColor={Palette.onSurfaceVariant}
           value={query}
           onChangeText={setQuery}
@@ -95,14 +97,14 @@ export default function CustomersScreen() {
           onPress={() => setOnlyPending(false)}
           style={[styles.filterChip, !onlyPending && styles.filterChipActive]}>
           <Text style={[styles.filterChipText, { color: !onlyPending ? Palette.onPrimary : Palette.onSurfaceVariant }]}>
-            All Customers
+            {t('customers.allCustomers')}
           </Text>
         </Pressable>
         <Pressable
           onPress={() => setOnlyPending(true)}
           style={[styles.filterChip, onlyPending && styles.filterChipActive]}>
           <Text style={[styles.filterChipText, { color: onlyPending ? Palette.onPrimary : Palette.onSurfaceVariant }]}>
-            With Pending Balance
+            {t('customers.withPending')}
           </Text>
         </Pressable>
       </View>
@@ -120,21 +122,20 @@ export default function CustomersScreen() {
                 <Text style={styles.customerName}>{customer.name}</Text>
                 <View style={styles.phoneRow}>
                   <Icon name="phone" size={14} color={Palette.onSurfaceVariant} />
-                  <Text style={styles.customerPhone}>{customer.phone ? `+91 ${customer.phone}` : 'No phone'}</Text>
+                  <Text style={styles.customerPhone}>{customer.phone ? `+91 ${customer.phone}` : t('common.noPhone')}</Text>
                 </View>
                 <Text style={styles.customerOrders}>
-                  {customer.completed_orders} orders delivered
+                  {t('customers.ordersDelivered', { count: customer.completed_orders })}
                 </Text>
                 {customer.orders_with_pending_balance > 0 ? (
                   <Text style={[styles.customerOrders, styles.pendingNote]}>
-                    {customer.orders_with_pending_balance} order
-                    {customer.orders_with_pending_balance === 1 ? '' : 's'} with pending payment
+                    {t('customers.ordersPending', { count: customer.orders_with_pending_balance })}
                   </Text>
                 ) : null}
               </View>
             </View>
             <View style={styles.balanceBlock}>
-              <Text style={styles.balanceLabel}>Outstanding</Text>
+              <Text style={styles.balanceLabel}>{t('customers.outstanding')}</Text>
               <Text
                 style={[
                   styles.balanceValue,
@@ -146,7 +147,7 @@ export default function CustomersScreen() {
           </View>
         ))}
         {visible.length === 0 && !loading && !error ? (
-          <Text style={styles.emptyText}>No customers found.</Text>
+          <Text style={styles.emptyText}>{t('customers.noCustomersFound')}</Text>
         ) : null}
       </View>
         </>

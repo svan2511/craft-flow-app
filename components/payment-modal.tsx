@@ -10,6 +10,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Icon } from '@/components/ui/icon';
 import { useToast } from '@/components/toast-provider';
@@ -17,17 +18,17 @@ import { Palette, Radius, Spacing, Type } from '@/constants/theme';
 import { apiRequest } from '@/lib/api';
 import { formatRupees } from '@/lib/format';
 
-const TYPES: { key: string; label: string }[] = [
-  { key: 'order_advance', label: 'Advance' },
-  { key: 'order_milestone', label: 'Milestone' },
-  { key: 'order_balance', label: 'Balance' },
+const TYPES: { key: string; labelKey: string }[] = [
+  { key: 'order_advance', labelKey: 'payments.advance' },
+  { key: 'order_milestone', labelKey: 'payments.milestone' },
+  { key: 'order_balance', labelKey: 'payments.balance' },
 ];
 
-const MODES: { key: string; label: string }[] = [
-  { key: 'cash', label: 'Cash' },
-  { key: 'online', label: 'Online' },
-  { key: 'upi', label: 'UPI' },
-  { key: 'cheque', label: 'Cheque' },
+const MODES: { key: string; labelKey: string }[] = [
+  { key: 'cash', labelKey: 'payments.cash' },
+  { key: 'online', labelKey: 'payments.online' },
+  { key: 'upi', labelKey: 'payments.upi' },
+  { key: 'cheque', labelKey: 'payments.cheque' },
 ];
 
 const DEFAULT_ADVANCE_PAID = false;
@@ -65,6 +66,7 @@ export function PaymentModal({
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const { showToast } = useToast();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (visible) {
@@ -95,13 +97,14 @@ export function PaymentModal({
   const submit = async () => {
     const value = parseFloat(amount);
     if (!Number.isFinite(value) || value <= 0) {
-      showToast('Please enter a valid amount greater than zero.', { variant: 'error' });
+      showToast(t('payments.invalidAmount'), { variant: 'error' });
       return;
     }
     if (maxAmount > 0 && value > maxAmount) {
-      showToast(`Payment cannot exceed the remaining due of ${formatRupees(maxAmount)}.`, {
-        variant: 'error',
-      });
+      showToast(
+        t('payments.exceedsDue', { amount: formatRupees(maxAmount) }),
+        { variant: 'error' },
+      );
       return;
     }
     setSubmitting(true);
@@ -118,10 +121,10 @@ export function PaymentModal({
         authenticated: true,
       });
       close();
-      showToast('Payment recorded.', { variant: 'success' });
+      showToast(t('payments.recorded'), { variant: 'success' });
       onSaved();
     } catch (e) {
-      showToast(e instanceof Error ? e.message : 'Could not record payment.', { variant: 'error' });
+      showToast(e instanceof Error ? e.message : t('payments.couldNotRecord'), { variant: 'error' });
     } finally {
       setSubmitting(false);
     }
@@ -142,17 +145,17 @@ export function PaymentModal({
                 <Icon name="payments" size={22} color={Palette.primary} />
               </View>
               <View style={styles.headerText}>
-                <Text style={styles.title}>Record Payment</Text>
-                <Text style={styles.subtitle}>Order #{orderId}</Text>
+                <Text style={styles.title}>{t('payments.recordPayment')}</Text>
+                <Text style={styles.subtitle}>{t('payments.orderTitle', { id: orderId })}</Text>
               </View>
             </View>
 
             <View>
-              <Text style={styles.label}>Amount (₹)</Text>
+              <Text style={styles.label}>{t('payments.amount')}</Text>
               <TextInput
                 style={styles.input}
                 value={amount}
-                onChangeText={(t) => setAmount(clampAmount(t))}
+                onChangeText={(mv) => setAmount(clampAmount(mv))}
                 placeholder="0"
                 placeholderTextColor={Palette.outline}
                 keyboardType="decimal-pad"
@@ -160,21 +163,21 @@ export function PaymentModal({
               />
               {maxAmount > 0 ? (
                 <Text style={styles.amountHint}>
-                  Remaining due: {formatRupees(maxAmount)}
+                  {t('payments.remainingDue', { amount: formatRupees(maxAmount) })}
                 </Text>
               ) : null}
             </View>
 
             <View>
-              <Text style={styles.label}>Payment Type</Text>
+              <Text style={styles.label}>{t('payments.paymentType')}</Text>
               <View style={styles.segmentRow}>
-                {TYPES.map((t) => {
-                  const disabledAdvance = t.key === 'order_advance' && hasAdvance;
-                  const active = type === t.key;
+                {TYPES.map((tk) => {
+                  const disabledAdvance = tk.key === 'order_advance' && hasAdvance;
+                  const active = type === tk.key;
                   return (
                     <Pressable
-                      key={t.key}
-                      onPress={() => setType(t.key)}
+                      key={tk.key}
+                      onPress={() => setType(tk.key)}
                       disabled={disabledAdvance}
                       style={[
                         styles.segmentChip,
@@ -192,7 +195,7 @@ export function PaymentModal({
                                 : Palette.onSurfaceVariant,
                           },
                         ]}>
-                        {t.label}
+                        {t(tk.labelKey)}
                       </Text>
                     </Pressable>
                   );
@@ -200,25 +203,25 @@ export function PaymentModal({
               </View>
               {hasAdvance ? (
                 <Text style={styles.advanceHint}>
-                  Advance already recorded. Choose Milestone or Balance instead.
+                  {t('payments.advanceAlready')}
                 </Text>
               ) : null}
             </View>
 
             <View>
-              <Text style={styles.label}>Mode</Text>
+              <Text style={styles.label}>{t('payments.mode')}</Text>
               <View style={styles.segmentRow}>
-                {MODES.map((m) => (
+                {MODES.map((md) => (
                   <Pressable
-                    key={m.key}
-                    onPress={() => setMode(m.key)}
-                    style={[styles.segmentChip, mode === m.key && styles.segmentChipActive]}>
+                    key={md.key}
+                    onPress={() => setMode(md.key)}
+                    style={[styles.segmentChip, mode === md.key && styles.segmentChipActive]}>
                     <Text
                       style={[
                         styles.segmentText,
-                        { color: mode === m.key ? Palette.onPrimary : Palette.onSurfaceVariant },
+                        { color: mode === md.key ? Palette.onPrimary : Palette.onSurfaceVariant },
                       ]}>
-                      {m.label}
+                      {t(md.labelKey)}
                     </Text>
                   </Pressable>
                 ))}
@@ -226,25 +229,25 @@ export function PaymentModal({
             </View>
 
             <View>
-              <Text style={styles.label}>Note (optional)</Text>
+              <Text style={styles.label}>{t('payments.noteOptional')}</Text>
               <TextInput
                 style={styles.input}
                 value={note}
                 onChangeText={setNote}
-                placeholder="e.g. Cash advance"
+                placeholder={t('payments.notePlaceholder')}
                 placeholderTextColor={Palette.outline}
               />
             </View>
 
             <View style={styles.buttonRow}>
               <Pressable style={styles.cancelButton} onPress={close} disabled={submitting}>
-                <Text style={styles.cancelText}>Cancel</Text>
+                <Text style={styles.cancelText}>{t('common.cancel')}</Text>
               </Pressable>
               <Pressable
                 style={[styles.submitButton, submitting && styles.buttonDisabled]}
                 onPress={submit}
                 disabled={submitting}>
-                <Text style={styles.submitText}>{submitting ? 'Saving…' : 'Save Payment'}</Text>
+                <Text style={styles.submitText}>{submitting ? t('common.saving') : t('payments.savePayment')}</Text>
               </Pressable>
             </View>
           </View>

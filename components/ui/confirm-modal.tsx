@@ -1,4 +1,5 @@
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Icon } from '@/components/ui/icon';
 import { Palette, Radius, Spacing, Type } from '@/constants/theme';
@@ -10,8 +11,8 @@ export function ConfirmModal({
   title,
   message,
   icon,
-  confirmLabel = 'Confirm',
-  cancelLabel = 'Cancel',
+  confirmLabel,
+  cancelLabel,
   variant = 'primary',
   submitting,
   onConfirm,
@@ -28,6 +29,9 @@ export function ConfirmModal({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
+  const displayConfirm = confirmLabel ?? t('common.confirm');
+  const displayCancel = cancelLabel ?? t('common.cancel');
   const colorMap: Record<ConfirmVariant, { bg: string; text: string; accent: string }> = {
     primary: { bg: Palette.primary, text: Palette.onPrimary, accent: 'rgba(138,109,59,0.12)' },
     success: { bg: '#3E6B4F', text: Palette.onPrimary, accent: 'rgba(62,107,79,0.12)' },
@@ -57,7 +61,7 @@ export function ConfirmModal({
               ]}
               onPress={onCancel}
               disabled={submitting}>
-              <Text style={styles.cancelText}>{cancelLabel}</Text>
+              <Text style={styles.cancelText}>{displayCancel}</Text>
             </Pressable>
             <Pressable
               style={({ pressed }) => [
@@ -67,7 +71,7 @@ export function ConfirmModal({
               ]}
               onPress={onConfirm}
               disabled={submitting}>
-              <Text style={styles.confirmText}>{submitting ? 'Please wait…' : confirmLabel}</Text>
+              <Text style={styles.confirmText}>{submitting ? t('common.pleaseWait') : displayConfirm}</Text>
             </Pressable>
           </View>
         </View>

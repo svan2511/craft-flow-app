@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Screen } from '@/components/screen';
 import { Icon } from '@/components/ui/icon';
@@ -57,25 +58,38 @@ export type ReportSummary = {
   karigar_payouts: { id: number; name: string; role: string | null; pending: number; due: number; paid: number }[];
 };
 
-const PERIODS: { key: PeriodKey; label: string }[] = [
-  { key: 'today', label: 'Today' },
-  { key: 'this_week', label: 'This Week' },
-  { key: 'this_month', label: 'This Month' },
-  { key: 'this_year', label: 'This Year' },
-];
+const PERIOD_KEYS: PeriodKey[] = ['today', 'this_week', 'this_month', 'this_year'];
 
-const STAGE_STATUSES: { key: 'pending' | 'in_progress' | 'completed'; label: string; color: string }[] = [
-  { key: 'pending', label: 'Pending', color: Palette.outline },
-  { key: 'in_progress', label: 'In Progress', color: Palette.primary },
-  { key: 'completed', label: 'Completed', color: Palette.success },
-];
+function periodOptions(t: (key: string) => string): { key: PeriodKey; label: string }[] {
+  return PERIOD_KEYS.map((key) => ({
+    key,
+    label:
+      key === 'today'
+        ? t('reports.today')
+        : key === 'this_week'
+          ? t('reports.thisWeek')
+          : key === 'this_month'
+            ? t('reports.thisMonth')
+            : t('reports.thisYear'),
+  }));
+}
 
-const MODES: { key: keyof ModeSlice; label: string }[] = [
-  { key: 'cash', label: 'Cash' },
-  { key: 'upi', label: 'UPI' },
-  { key: 'online', label: 'Online' },
-  { key: 'cheque', label: 'Cheque' },
-];
+function stageStatuses(t: (key: string) => string): { key: 'pending' | 'in_progress' | 'completed'; label: string; color: string }[] {
+  return [
+    { key: 'pending', label: t('reports.pending'), color: Palette.outline },
+    { key: 'in_progress', label: t('reports.inProgress'), color: Palette.primary },
+    { key: 'completed', label: t('dashboard.completed'), color: Palette.success },
+  ];
+}
+
+function modeOptions(t: (key: string) => string): { key: keyof ModeSlice; label: string }[] {
+  return [
+    { key: 'cash', label: t('payments.cash') },
+    { key: 'upi', label: t('payments.upi') },
+    { key: 'online', label: t('payments.online') },
+    { key: 'cheque', label: t('payments.cheque') },
+  ];
+}
 
 const ZERO_COLLECTION: CollectionSlice = {
   total: 0,
@@ -150,7 +164,7 @@ function PayoutRow({ name, role, amount, amountColor }: {
   );
 }
 
-function StageFunnelRow({ stage }: { stage: ReportSummary['stage_funnel'][number] }) {
+function StageFunnelRow({ stage, statuses }: { stage: ReportSummary['stage_funnel'][number]; statuses: { key: 'pending' | 'in_progress' | 'completed'; label: string; color: string }[] }) {
   const segments: { key: 'pending' | 'in_progress' | 'completed'; count: number }[] = [
     { key: 'pending', count: stage.pending },
     { key: 'in_progress', count: stage.in_progress },
@@ -173,7 +187,7 @@ function StageFunnelRow({ stage }: { stage: ReportSummary['stage_funnel'][number
           const isEmpty = seg.count === 0;
           const color = isEmpty
             ? Palette.surfaceContainerHigh
-            : STAGE_STATUSES.find((s) => s.key === seg.key)!.color;
+            : statuses.find((s) => s.key === seg.key)!.color;
           return (
             <View
               key={seg.key}
@@ -200,6 +214,10 @@ function StageFunnelRow({ stage }: { stage: ReportSummary['stage_funnel'][number
 }
 
 export default function ReportsScreen() {
+  const { t } = useTranslation();
+  const PERIODS = periodOptions(t);
+  const MODES = modeOptions(t);
+  const STAGE_STATUSES = stageStatuses(t);
   const [period, setPeriod] = useState<PeriodKey>('this_month');
   const [exporting, setExporting] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
@@ -225,9 +243,9 @@ export default function ReportsScreen() {
         phone: business?.phone ?? null,
         city: business?.city ?? null,
         address: business?.address ?? null,
-      });
+      }, t);
     } catch (e) {
-      showToast(e instanceof Error ? e.message : 'Could not generate report PDF.', { variant: 'error' });
+      showToast(e instanceof Error ? e.message : t('reports.generateFailed'), { variant: 'error' });
     } finally {
       setExporting(false);
     }
@@ -258,8 +276,8 @@ export default function ReportsScreen() {
         <>
           <View style={styles.pageHeader}>
             <View style={styles.pageHeaderText}>
-              <Text style={styles.pageTitle}>Reports &amp; Analytics</Text>
-              <Text style={styles.pageSubtitle}>Financial &amp; production overview for your workshop.</Text>
+              <Text style={styles.pageTitle}>{t('reports.title')}</Text>
+              <Text style={styles.pageSubtitle}>{t('reports.subtitle')}</Text>
             </View>
             <Pressable
               style={({ pressed }) => [styles.downloadButton, (exporting || !report) && styles.downloadDisabled, pressed && styles.downloadPressed]}
@@ -290,19 +308,19 @@ export default function ReportsScreen() {
           </View>
 
           {/* Money In (Collections) */}
-          <SectionHeader icon="account_balance_wallet" title="Money In (Collections)" tint={Palette.primary} />
+          <SectionHeader icon="account_balance_wallet" title={t('reports.moneyIn')} tint={Palette.primary} />
           <View style={styles.card}>
-            <Text style={styles.cardHint}>{periodLabel} collected from customers</Text>
+            <Text style={styles.cardHint}>{t('reports.collectedHint', { period: periodLabel })}</Text>
             <View style={styles.valueRow}>
               <Text style={styles.financeValue}>{formatRupees(collection.total)}</Text>
             </View>
             <View style={styles.splitRow}>
-              <MiniStatBox label="Advance" value={collection.advance} />
-              <MiniStatBox label="Milestone" value={collection.milestone} />
-              <MiniStatBox label="Balance" value={collection.balance} />
+              <MiniStatBox label={t('reports.advance')} value={collection.advance} />
+              <MiniStatBox label={t('reports.milestone')} value={collection.milestone} />
+              <MiniStatBox label={t('reports.balance')} value={collection.balance} />
             </View>
             <View style={styles.cardDivider} />
-            <Text style={styles.cardHint}>By payment mode</Text>
+            <Text style={styles.cardHint}>{t('reports.byMode')}</Text>
             <View style={styles.modeRow}>
               {MODES.map((m) => (
                 <View key={m.key} style={styles.modeChip}>
@@ -314,42 +332,44 @@ export default function ReportsScreen() {
           </View>
 
           {/* Money Out (Karigar Payments) */}
-          <SectionHeader icon="handyman" title="Money Out (To Karigar)" tint={Palette.secondary} />
+          <SectionHeader icon="handyman" title={t('reports.moneyOut')} tint={Palette.secondary} />
           <View style={styles.card}>
-            <Text style={styles.cardHint}>{periodLabel} paid to workers</Text>
+            <Text style={styles.cardHint}>{t('reports.paidHint', { period: periodLabel })}</Text>
             <View style={styles.valueRow}>
               <Text style={styles.financeValue}>{formatRupees(outflow.total)}</Text>
               <View style={[styles.outBadge, outflow.total > collection.total && styles.outBadgeWarn]}>
                 <Text style={styles.outBadgeText}>
-                  {collection.total > 0 ? `${Math.round((outflow.total / collection.total) * 100)}% of collected` : 'No inflow'}
+                  {collection.total > 0
+                    ? t('reports.ofCollected', { percent: Math.round((outflow.total / collection.total) * 100) })
+                    : t('reports.noInflow')}
                 </Text>
               </View>
             </View>
             <View style={styles.splitRow}>
-              <MiniStatBox label="Advances" value={outflow.advance} />
-              <MiniStatBox label="Settlements" value={outflow.settlement} />
+              <MiniStatBox label={t('reports.advances')} value={outflow.advance} />
+              <MiniStatBox label={t('reports.settlements')} value={outflow.settlement} />
             </View>
           </View>
 
           {/* Current Balance Sheet */}
-          <SectionHeader icon="account_balance" title="Current Balance Sheet" tint={Palette.tertiary} />
+          <SectionHeader icon="account_balance" title={t('reports.balanceSheet')} tint={Palette.tertiary} />
           <View style={styles.card}>
             <BalanceRow
-              label="Pending from customers"
+              label={t('reports.pendingFromCustomers')}
               icon="call_received"
               value={report?.balance_sheet.customer_pending ?? 0}
-              sub={report?.balance_sheet.pending_orders ? `${report.balance_sheet.pending_orders} order(s) to collect` : undefined}
+              sub={report?.balance_sheet.pending_orders ? t('reports.ordersToCollect', { count: report.balance_sheet.pending_orders }) : undefined}
             />
             <View style={styles.rowDivider} />
             <BalanceRow
-              label="Pending to karigar"
+              label={t('reports.pendingToKarigar')}
               icon="call_made"
               value={report?.balance_sheet.karigar_pending ?? 0}
               valueColor={Palette.warning}
             />
             <View style={styles.rowDivider} />
             <BalanceRow
-              label="Workshop position"
+              label={t('reports.workshopPosition')}
               icon="savings"
               value={report?.balance_sheet.net ?? 0}
               valueColor={(report?.balance_sheet.net ?? 0) >= 0 ? Palette.success : Palette.error}
@@ -357,7 +377,7 @@ export default function ReportsScreen() {
           </View>
 
           {/* Production Funnel */}
-          <SectionHeader icon="auto_graph" title="Production Funnel" tint={Palette.primary} />
+          <SectionHeader icon="auto_graph" title={t('reports.productionFunnel')} tint={Palette.primary} />
           <View style={styles.card}>
             <View style={styles.funnelLegend}>
               {STAGE_STATUSES.map((s) => (
@@ -368,17 +388,17 @@ export default function ReportsScreen() {
               ))}
             </View>
             {(report?.stage_funnel ?? []).map((stage) => (
-              <StageFunnelRow key={stage.name} stage={stage} />
+              <StageFunnelRow key={stage.name} stage={stage} statuses={STAGE_STATUSES} />
             ))}
             {!report?.stage_funnel?.length ? (
-              <Text style={styles.emptyList}>Assign work stages to orders to see the production funnel.</Text>
+              <Text style={styles.emptyList}>{t('reports.noFunnel')}</Text>
             ) : null}
           </View>
 
           {/* Profit & Cost */}
-          <SectionHeader icon="trending_up" title="Profit &amp; Cost" tint={Palette.secondary} />
+          <SectionHeader icon="trending_up" title={t('reports.profitCost')} tint={Palette.secondary} />
           <View style={styles.card}>
-            <Text style={styles.cardHint}>{periodLabel} order valuation</Text>
+            <Text style={styles.cardHint}>{t('reports.valuationHint', { period: periodLabel })}</Text>
             <View style={styles.valueRow}>
               <Text style={styles.financeValue}>{formatRupees(profit.revenue)}</Text>
               <View style={[styles.marginBadge, profit.margin >= 0 ? styles.marginGood : styles.marginBad]}>
@@ -388,18 +408,18 @@ export default function ReportsScreen() {
               </View>
             </View>
             <View style={styles.costRow}>
-              <BalanceRow label="Material cost" icon="inventory_2" value={profit.material} />
+              <BalanceRow label={t('reports.materialCost')} icon="inventory_2" value={profit.material} />
             </View>
             <View style={styles.rowDivider} />
-            <BalanceRow label="Labour cost" icon="work" value={profit.labor} />
+            <BalanceRow label={t('reports.laborCost')} icon="work" value={profit.labor} />
             <View style={styles.rowDivider} />
-            <BalanceRow label="Net profit" icon="savings" value={profit.net} valueColor={(profit.net ?? 0) >= 0 ? Palette.success : Palette.error} />
+            <BalanceRow label={t('reports.netProfit')} icon="savings" value={profit.net} valueColor={(profit.net ?? 0) >= 0 ? Palette.success : Palette.error} />
           </View>
 
           {/* Monthly Trend */}
-          <SectionHeader icon="point_of_sale" title="Revenue Trend" tint={Palette.tertiary} />
+          <SectionHeader icon="point_of_sale" title={t('reports.revenueTrend')} tint={Palette.tertiary} />
           <View style={styles.card}>
-            <Text style={styles.chartTitle}>Last 6 months collections</Text>
+            <Text style={styles.chartTitle}>{t('reports.last6Months')}</Text>
             <View style={styles.barChart}>
               {(report?.monthly_revenue ?? []).map((item, index) => {
                 const max = Math.max(...(report?.monthly_revenue ?? []).map((m) => m.revenue), 1);
@@ -424,10 +444,10 @@ export default function ReportsScreen() {
           </View>
 
           {/* Top Pending Customers */}
-          <SectionHeader icon="support_agent" title="Top Pending Customers" tint={Palette.warning} />
+          <SectionHeader icon="support_agent" title={t('reports.topCustomers')} tint={Palette.warning} />
           <View style={styles.card}>
             {(report?.top_customers ?? []).length === 0 ? (
-              <Text style={styles.emptyList}>No pending balances. All customers are settled.</Text>
+              <Text style={styles.emptyList}>{t('reports.allSettled')}</Text>
             ) : (
               (report?.top_customers ?? []).map((c, i) => (
                 <View key={c.id}>
@@ -439,7 +459,7 @@ export default function ReportsScreen() {
                       </View>
                       <View>
                         <Text style={styles.listTitle}>{c.name}</Text>
-                        <Text style={styles.listSub}>{c.orders} active order(s)</Text>
+                        <Text style={styles.listSub}>{t('reports.activeOrders', { count: c.orders })}</Text>
                       </View>
                     </View>
                     <Text style={[styles.listAmount, { color: Palette.warning }]}>{formatRupees(c.pending)}</Text>
@@ -450,10 +470,10 @@ export default function ReportsScreen() {
           </View>
 
           {/* Karigar Payouts */}
-          <SectionHeader icon="payments" title="Karigar Payouts Due" tint={Palette.secondary} />
+          <SectionHeader icon="payments" title={t('reports.karigarPayouts')} tint={Palette.secondary} />
           <View style={styles.card}>
             {(report?.karigar_payouts ?? []).length === 0 ? (
-              <Text style={styles.emptyList}>No pending work payments. Karigar ledger is up to date.</Text>
+              <Text style={styles.emptyList}>{t('reports.noPayouts')}</Text>
             ) : (
               (report?.karigar_payouts ?? []).map((k, i) => (
                 <View key={k.id}>
@@ -465,27 +485,29 @@ export default function ReportsScreen() {
           </View>
 
           {/* Insights */}
-          <SectionHeader icon="insights" title="Automated Insights" tint={Palette.primary} />
+          <SectionHeader icon="insights" title={t('reports.insights')} tint={Palette.primary} />
           <View style={styles.insightsCard}>
             <Icon name="insights" size={48} color={Palette.onPrimary} />
-            <Text style={styles.insightsTitle}>Workshop Insights</Text>
+            <Text style={styles.insightsTitle}>{t('reports.insightsTitle')}</Text>
             {insight === null ? (
               <Text style={styles.insightsBody}>
-                Add more orders and payments to unlock performance insights for your workshop.
+                {t('reports.insightsEmpty')}
               </Text>
             ) : insight > 0 ? (
               <Text style={styles.insightsBody}>
-                Collections grew {insight}% this month. Keep following up on {report?.balance_sheet.pending_orders ?? 0} pending
-                order(s) to collect {formatRupees(report?.balance_sheet.customer_pending ?? 0)}.
+                {t('reports.insightsUp', {
+                  percent: insight,
+                  orders: report?.balance_sheet.pending_orders ?? 0,
+                  amount: formatRupees(report?.balance_sheet.customer_pending ?? 0),
+                })}
               </Text>
             ) : insight < 0 ? (
               <Text style={styles.insightsBody}>
-                Collections dropped {Math.abs(insight)}% this month. Follow up on pending balances and restock popular
-                materials to drive more orders.
+                {t('reports.insightsDown', { percent: Math.abs(insight) })}
               </Text>
             ) : (
               <Text style={styles.insightsBody}>
-                Collections are steady. Focus on delivering ready orders and collecting pending balances to grow.
+                {t('reports.insightsSteady')}
               </Text>
             )}
           </View>

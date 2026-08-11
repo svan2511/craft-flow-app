@@ -1,11 +1,14 @@
 import { useRouter } from 'expo-router';
+import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 
 import { AppHeader } from '@/components/app-header';
 import { Icon } from '@/components/ui/icon';
 import { useToast } from '@/components/toast-provider';
 import { Palette, Radius, Type } from '@/constants/theme';
+import { SUPPORTED_LANGUAGES, currentLanguage, setAppLanguage, type AppLanguage } from '@/lib/i18n';
 
 const BG_GRADIENT = '#F8F6F3';
 
@@ -45,52 +48,111 @@ function SettingRow({
   );
 }
 
+function LanguageSheet({
+  visible,
+  current,
+  onSelect,
+  onClose,
+}: {
+  visible: boolean;
+  current: AppLanguage;
+  onSelect: (lang: AppLanguage) => void;
+  onClose: () => void;
+}) {
+  const { t } = useTranslation();
+  if (!visible) {
+    return null;
+  }
+  return (
+    <Pressable style={styles.languageSheetBackdrop} onPress={onClose}>
+      <Pressable style={styles.languageSheet} onPress={(e) => e.stopPropagation()}>
+        <Text style={styles.languageSheetTitle}>{t('settings.languageSelection')}</Text>
+        {(Object.keys(SUPPORTED_LANGUAGES) as AppLanguage[]).map((lang) => {
+          const selected = lang === current;
+          return (
+            <Pressable
+              key={lang}
+              style={({ pressed }) => [styles.languageRow, pressed && styles.rowPressed]}
+              onPress={() => onSelect(lang)}>
+              <View style={styles.languageRowIconWrap}>
+                <Icon name="language" size={20} color={selected ? Palette.primary : Palette.outline} />
+              </View>
+              <Text style={[styles.rowTitle, selected && { color: Palette.primary }]}>
+                {SUPPORTED_LANGUAGES[lang]}
+              </Text>
+              {selected ? <Icon name="check_circle" size={20} color={Palette.primary} /> : null}
+            </Pressable>
+          );
+        })}
+        <Pressable style={({ pressed }) => [styles.languageClose, pressed && styles.rowPressed]} onPress={onClose}>
+          <Text style={styles.languageCloseText}>{t('common.cancel')}</Text>
+        </Pressable>
+      </Pressable>
+    </Pressable>
+  );
+}
+
 export default function SettingsScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { showToast } = useToast();
+  const [languagePicker, setLanguagePicker] = useState(false);
+  const [language, setLanguage] = useState<AppLanguage>(currentLanguage());
+
+  const switchLanguage = async (lang: AppLanguage) => {
+    setLanguage(lang);
+    await setAppLanguage(lang);
+    setLanguagePicker(false);
+  };
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
-      <AppHeader title="Settings" showLogo={false} onBack={() => router.back()} right={<View style={{ width: 48 }} />} />
+      <AppHeader title={t('settings.title')} showLogo={false} onBack={() => router.back()} right={<View style={{ width: 48 }} />} />
 
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>App</Text>
+          <Text style={styles.sectionTitle}>{t('settings.app')}</Text>
         </View>
         <View style={styles.card}>
           <SettingRow
             icon="language"
-            title="Language"
-            subtitle="English"
-            trailing="coming-soon"
-            onPress={() => showToast('Language options coming soon.', { variant: 'info' })}
+            title={t('settings.language')}
+            subtitle={SUPPORTED_LANGUAGES[language]}
+            onPress={() => setLanguagePicker(true)}
           />
         </View>
 
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Support</Text>
+          <Text style={styles.sectionTitle}>{t('settings.support')}</Text>
         </View>
         <View style={styles.card}>
           <SettingRow
             icon="help_outline"
-            title="Help & Support"
-            subtitle="FAQs and how-to guides"
+            title={t('settings.helpSupport')}
+            subtitle={t('settings.helpSubtitle')}
             onPress={() => router.push('/help')}
           />
           <View style={styles.divider} />
           <SettingRow
             icon="info"
-            title="About Craft Flow"
-            subtitle="Version, credits and legal"
+            title={t('settings.about')}
+            subtitle={t('settings.aboutSubtitle')}
             onPress={() => router.push('/about')}
           />
         </View>
 
-        <Text style={styles.footerText}>Craft Flow · v1.0.0</Text>
+        <Text style={styles.footerText}>{t('settings.version')}</Text>
       </ScrollView>
+
+      <LanguageSheet
+        visible={languagePicker}
+        current={language}
+        onSelect={(lang) => void switchLanguage(lang)}
+        onClose={() => setLanguagePicker(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -185,5 +247,52 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Palette.outline,
     marginTop: 8,
+  },
+  languageSheetBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(28,27,26,0.45)',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
+  languageSheet: {
+    alignSelf: 'stretch',
+    backgroundColor: Palette.surfaceContainerLowest,
+    borderTopLeftRadius: Radius.xl * 2,
+    borderTopRightRadius: Radius.xl * 2,
+    padding: 16,
+    paddingBottom: 32,
+    gap: 4,
+  },
+  languageSheetTitle: {
+    ...Type.headlineMd,
+    color: Palette.onSurface,
+    paddingVertical: 12,
+  },
+  languageRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 14,
+    borderRadius: Radius.lg,
+  },
+  languageRowIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: Radius.md,
+    backgroundColor: 'rgba(138,109,59,0.10)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  languageClose: {
+    marginTop: 8,
+    paddingVertical: 14,
+    borderRadius: Radius.lg,
+    backgroundColor: Palette.surfaceContainerLow,
+    alignItems: 'center',
+  },
+  languageCloseText: {
+    ...Type.labelBold,
+    color: Palette.primary,
   },
 });

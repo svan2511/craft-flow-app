@@ -2,6 +2,7 @@ import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Animated, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppHeader } from '@/components/app-header';
@@ -90,6 +91,7 @@ type KarigarDetail = {
 export default function KarigarDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { t } = useTranslation();
   const [modal, setModal] = useState<'advance' | 'settle' | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [openGroupKey, setOpenGroupKey] = useState<string | null>(null);
@@ -103,7 +105,7 @@ export default function KarigarDetailScreen() {
   );
 
   const karigar = data?.karigar ?? null;
-  const ledgerGroups = buildLedger(karigar);
+  const ledgerGroups = buildLedger(karigar, t);
 
   const moneyOrders: KarigarMoneyOrder[] = (karigar?.orders ?? []).map((o) => ({
     id: o.id,
@@ -124,10 +126,10 @@ export default function KarigarDetailScreen() {
         authenticated: true,
       });
       setModal(null);
-      showToast('Karigar advance recorded.', { variant: 'success' });
+      showToast(t('karigars.advanceRecorded'), { variant: 'success' });
       await reload();
     } catch (e) {
-      showToast(e instanceof Error ? e.message : 'Could not record advance.', { variant: 'error' });
+      showToast(e instanceof Error ? e.message : t('karigars.couldNotRecordAdvance'), { variant: 'error' });
     } finally {
       setSubmitting(false);
     }
@@ -145,10 +147,10 @@ export default function KarigarDetailScreen() {
         authenticated: true,
       });
       setModal(null);
-      showToast('Settlement recorded.', { variant: 'success' });
+      showToast(t('karigars.settlementRecorded'), { variant: 'success' });
       await reload();
     } catch (e) {
-      showToast(e instanceof Error ? e.message : 'Could not settle payout.', { variant: 'error' });
+      showToast(e instanceof Error ? e.message : t('karigars.couldNotSettle'), { variant: 'error' });
     } finally {
       setSubmitting(false);
     }
@@ -157,7 +159,7 @@ export default function KarigarDetailScreen() {
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
       <AppHeader
-        title={karigar ? karigar.name : 'Karigar'}
+        title={karigar ? karigar.name : t('karigars.role')}
         showLogo={false}
         onBack={() => router.back()}
       />
@@ -183,12 +185,12 @@ export default function KarigarDetailScreen() {
                 <Text style={styles.workerName}>{karigar.name}</Text>
                 <View style={styles.roleRow}>
                   <Icon name="handyman" size={15} color={Palette.primary} />
-                  <Text style={styles.workerRole}>{karigar.role ?? 'Karigar'}</Text>
+                  <Text style={styles.workerRole}>{karigar.role ?? t('karigars.role')}</Text>
                 </View>
                 {karigar.default_rate != null ? (
                   <View style={styles.phoneRow}>
                     <Icon name="payments" size={13} color={Palette.onSurfaceVariant} />
-                    <Text style={styles.phoneText}>Default Rate: {formatRupees(karigar.default_rate)}</Text>
+                    <Text style={styles.phoneText}>{t('karigars.defaultRate', { rate: formatRupees(karigar.default_rate) })}</Text>
                   </View>
                 ) : null}
                 {karigar.phone ? (
@@ -205,21 +207,21 @@ export default function KarigarDetailScreen() {
                 <Text style={[styles.jobStatValue, styles.jobStatActive]}>
                   {karigar.active_orders ?? 0}
                 </Text>
-                <Text style={styles.jobStatLabel}>Active Jobs</Text>
+                <Text style={styles.jobStatLabel}>{t('karigars.activeJobs')}</Text>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.jobStat}>
                 <Text style={[styles.jobStatValue, styles.jobStatCompleted]}>
                   {karigar.completed_orders ?? 0}
                 </Text>
-                <Text style={styles.jobStatLabel}>Completed</Text>
+                <Text style={styles.jobStatLabel}>{t('karigars.completed')}</Text>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.jobStat}>
                 <Text style={[styles.jobStatValue, styles.jobStatPending]}>
                   {karigar.pending_orders ?? 0}
                 </Text>
-                <Text style={styles.jobStatLabel}>Pending</Text>
+                <Text style={styles.jobStatLabel}>{t('karigars.pending')}</Text>
               </View>
             </View>
           </View>
@@ -229,23 +231,23 @@ export default function KarigarDetailScreen() {
               <View style={[styles.sectionIcon, styles.sectionIconWallet]}>
                 <Icon name="account_balance_wallet" size={15} color={Palette.secondary} />
               </View>
-              <Text style={styles.sectionTitle}>Total Statement</Text>
+              <Text style={styles.sectionTitle}>{t('karigars.totalStatement')}</Text>
             </View>
             <View style={styles.settlementGrid}>
               <View style={[styles.settlementItem, styles.settlementEarned]}>
-                <Text style={styles.settlementLabel}>Total Due</Text>
+                <Text style={styles.settlementLabel}>{t('karigars.totalDue')}</Text>
                 <Text style={[styles.settlementValue, styles.settlementEarnedValue]}>
                   {formatRupees(karigar.ledger?.total_due ?? 0)}
                 </Text>
               </View>
               <View style={[styles.settlementItem, styles.settlementPaid]}>
-                <Text style={styles.settlementLabel}>Total Paid</Text>
+                <Text style={styles.settlementLabel}>{t('karigars.totalPaid')}</Text>
                 <Text style={[styles.settlementValue, styles.settlementPaidValue]}>
                   {formatRupees(karigar.ledger?.total_received ?? 0)}
                 </Text>
               </View>
               <View style={[styles.settlementItem, styles.settlementPending]}>
-                <Text style={styles.settlementLabel}>Pending</Text>
+                <Text style={styles.settlementLabel}>{t('karigars.pending')}</Text>
                 <Text style={[styles.settlementValue, styles.settlementPendingValue]}>
                   {formatRupees(karigar.ledger?.total_pending ?? 0)}
                 </Text>
@@ -258,18 +260,18 @@ export default function KarigarDetailScreen() {
               <View style={styles.sectionIcon}>
                 <Icon name="assignment" size={15} color={Palette.onSurfaceVariant} />
               </View>
-              <Text style={styles.sectionTitle}>Order-wise Work</Text>
+              <Text style={styles.sectionTitle}>{t('karigars.orderWiseWork')}</Text>
             </View>
 
             {!karigar.orders || karigar.orders.length === 0 ? (
               <View style={styles.ledger}>
-                <Text style={styles.ledgerEmpty}>No orders assigned to this karigar yet.</Text>
+                <Text style={styles.ledgerEmpty}>{t('karigars.noOrdersAssigned')}</Text>
               </View>
             ) : (
               <View style={styles.orderWrap}>
                 {karigar.orders.map((ord) => {
-                  const orderBadge = orderStatusMeta(ord.status);
-                  const stage = ord.current_stage ? stageStatusMeta(ord.current_stage.status) : null;
+                  const orderBadge = orderStatusMeta(t, ord.status);
+                  const stage = ord.current_stage ? stageStatusMeta(t, ord.current_stage.status) : null;
                   const allDone =
                     ord.current_stage != null &&
                     ord.current_stage.status === 'completed' &&
@@ -284,7 +286,7 @@ export default function KarigarDetailScreen() {
                         {stage ? (
                           <StatusBadge
                             variant={stageBadgeVariant(ord.current_stage?.status ?? 'pending')}
-                            label={stageBadgeLabel(ord.current_stage?.status ?? 'pending', ord.current_stage?.completed_stages)}
+                            label={stageBadgeLabel(ord.current_stage?.status ?? 'pending', ord.current_stage?.completed_stages, t)}
                           />
                         ) : (
                           <StatusBadge {...orderBadge} />
@@ -297,8 +299,9 @@ export default function KarigarDetailScreen() {
                           {allDone && ord.current_stage ? (
                             <>
                               <Text style={styles.orderStageName}>
-                                {ord.current_stage.completed_stages} stage
-                                {ord.current_stage.completed_stages === 1 ? '' : 's'} completed
+                                {ord.current_stage.completed_stages === 1
+                                  ? `${ord.current_stage.completed_stages} ${t('karigars.stageCompleted')}`
+                                  : `${ord.current_stage.completed_stages} ${t('karigars.stagesCompleted')}`}
                               </Text>
                               <Text style={[styles.orderStageStatus, { color: stage.color }]}>
                                 {stage.label}
@@ -316,25 +319,25 @@ export default function KarigarDetailScreen() {
                       ) : (
                         <View style={styles.orderStageRow}>
                           <View style={[styles.orderStageDot, { backgroundColor: Palette.outlineVariant }]} />
-                          <Text style={styles.orderStageName}>No stages assigned</Text>
+                          <Text style={styles.orderStageName}>{t('karigars.noStagesAssigned')}</Text>
                         </View>
                       )}
 
                       <View style={styles.orderFinance}>
                         <View style={styles.orderFinanceBlock}>
-                          <Text style={styles.orderFinanceLabel}>Due</Text>
+                          <Text style={styles.orderFinanceLabel}>{t('karigars.due')}</Text>
                           <Text style={[styles.orderFinanceValue, styles.orderFinanceEarned]}>
                             {formatRupees(ord.due)}
                           </Text>
                         </View>
                         <View style={styles.orderFinanceBlock}>
-                          <Text style={styles.orderFinanceLabel}>Received</Text>
+                          <Text style={styles.orderFinanceLabel}>{t('karigars.received')}</Text>
                           <Text style={[styles.orderFinanceValue, styles.orderFinanceReceived]}>
                             {formatRupees(ord.received)}
                           </Text>
                         </View>
                         <View style={styles.orderFinanceBlock}>
-                          <Text style={styles.orderFinanceLabel}>Pending</Text>
+                          <Text style={styles.orderFinanceLabel}>{t('karigars.pending')}</Text>
                           <Text style={[styles.orderFinanceValue, styles.orderFinancePending]}>
                             {formatRupees(ord.pending)}
                           </Text>
@@ -352,12 +355,12 @@ export default function KarigarDetailScreen() {
               <View style={styles.sectionIcon}>
                 <Icon name="list_alt" size={15} color={Palette.onSurfaceVariant} />
               </View>
-              <Text style={styles.sectionTitle}>Ledger History</Text>
+              <Text style={styles.sectionTitle}>{t('karigars.ledgerHistory')}</Text>
             </View>
 
             <View style={styles.ledger}>
               {ledgerGroups.length === 0 ? (
-                <Text style={styles.ledgerEmpty}>No ledger entries yet.</Text>
+                <Text style={styles.ledgerEmpty}>{t('karigars.noLedgerEntries')}</Text>
               ) : (
                 ledgerGroups.map((group) => (
                   <LedgerAccordion
@@ -374,20 +377,20 @@ export default function KarigarDetailScreen() {
           <View style={styles.actions}>
             <Pressable style={styles.actionOutline} onPress={() => setModal('advance')}>
               <Icon name="payments" size={20} color={Palette.primary} />
-              <Text style={styles.actionOutlineText}>Give Advance</Text>
+              <Text style={styles.actionOutlineText}>{t('karigars.giveAdvance')}</Text>
             </Pressable>
             <Pressable style={styles.actionSolid} onPress={() => setModal('settle')}>
               <Icon name="check_circle" size={20} color={Palette.onSecondary} />
-              <Text style={styles.actionSolidText}>Settle Payout</Text>
+              <Text style={styles.actionSolidText}>{t('karigars.settlePayout')}</Text>
             </Pressable>
           </View>
         </ScrollView>
       ) : (
         <View style={styles.errorWrap}>
           <Icon name="error_outline" size={40} color={Palette.error} />
-          <Text style={styles.emptyText}>{error ?? 'Karigar not found.'}</Text>
+          <Text style={styles.emptyText}>{error ?? t('karigars.karigarNotFound')}</Text>
           <Pressable style={styles.backButton} onPress={() => router.back()}>
-            <Text style={styles.backButtonText}>Go Back</Text>
+            <Text style={styles.backButtonText}>{t('common.goBack')}</Text>
           </Pressable>
         </View>
       )}
@@ -395,11 +398,11 @@ export default function KarigarDetailScreen() {
       <KarigarMoneyModal
         visible={modal === 'advance'}
         mode="advance"
-        title="Give Advance"
-        subtitle={karigar ? `To ${karigar.name}` : undefined}
+        title={t('karigarMoney.giveAdvance')}
+        subtitle={karigar ? t('karigars.to', { name: karigar.name }) : undefined}
         orders={moneyOrders}
-        confirmLabel="Save Advance"
-        notePlaceholder="e.g. Cash advance for material"
+        confirmLabel={t('karigarMoney.saveAdvance')}
+        notePlaceholder={t('karigarMoney.advanceNote')}
         onClose={() => setModal(null)}
         onSubmit={submitAdvance}
         submitLoading={submitting}
@@ -408,11 +411,11 @@ export default function KarigarDetailScreen() {
       <KarigarMoneyModal
         visible={modal === 'settle'}
         mode="settle"
-        title="Settle Payout"
-        subtitle={karigar ? `To ${karigar.name}` : undefined}
+        title={t('karigarMoney.settlePayout')}
+        subtitle={karigar ? t('karigars.to', { name: karigar.name }) : undefined}
         orders={moneyOrders}
-        confirmLabel="Settle"
-        notePlaceholder="e.g. Cash settled"
+        confirmLabel={t('karigarMoney.settle')}
+        notePlaceholder={t('karigarMoney.settleNote')}
         onClose={() => setModal(null)}
         onSubmit={submitSettle}
         submitLoading={submitting}
@@ -430,6 +433,7 @@ function LedgerAccordion({
   open: boolean;
   onToggle: () => void;
 }) {
+  const { t } = useTranslation();
   const [measured, setMeasured] = useState<number | null>(null);
   const [anim] = useState(() => new Animated.Value(0));
 
@@ -503,7 +507,7 @@ function LedgerAccordion({
                     <View style={styles.ledgerStageRow}>
                       <Icon name="account_balance_wallet" size={11} color={Palette.warning} />
                       <Text style={styles.ledgerBalanceText}>
-                        Balance remaining: {formatRupees(row.advanceRemaining)}
+                        {t('karigars.balanceRemaining', { amount: formatRupees(row.advanceRemaining) })}
                       </Text>
                     </View>
                   ) : null}
@@ -521,7 +525,10 @@ function LedgerAccordion({
   );
 }
 
-function buildLedger(karigar: KarigarDetail | null): LedgerGroup[] {
+function buildLedger(
+  karigar: KarigarDetail | null,
+  t: (key: string, params?: Record<string, unknown>) => string,
+): LedgerGroup[] {
   if (!karigar) {
     return [];
   }
@@ -536,7 +543,7 @@ function buildLedger(karigar: KarigarDetail | null): LedgerGroup[] {
       title: payment.order
         ? `${payment.type_label} · #${payment.order.order_no}`
         : payment.type_label,
-      date: payment.paid_at ? `Paid on ${payment.paid_at}` : 'Paid',
+      date: payment.paid_at ? t('karigars.paidOn', { date: payment.paid_at }) : t('karigars.paid'),
       amount: `+${formatRupees(payment.amount)}`,
       positive: true,
       stageName: payment.stage?.name,
@@ -558,7 +565,7 @@ function buildLedger(karigar: KarigarDetail | null): LedgerGroup[] {
     if (orderId === null) {
       result.push({
         key: 'general',
-        title: 'General Payments',
+        title: t('karigars.generalPayments'),
         total: entries.reduce((sum, e) => sum + parseFloat(e.amount.replace(/[^0-9.]/g, '')), 0),
         entries,
       });
@@ -589,14 +596,20 @@ function stageBadgeVariant(status: string): 'completed' | 'inProgress' | 'pendin
   }
 }
 
-function stageBadgeLabel(status: string, completed?: number): string {
+function stageBadgeLabel(
+  status: string,
+  completed: number | undefined,
+  t: (key: string, params?: Record<string, unknown>) => string,
+): string {
   switch (status) {
     case 'completed':
-      return `Completed${completed && completed > 1 ? ` · ${completed}` : ''}`;
+      return completed && completed > 1
+        ? `${t('stage.completed')} · ${completed}`
+        : t('karigars.completed');
     case 'in_progress':
-      return 'In Progress';
+      return t('karigars.inProgress');
     default:
-      return 'Pending';
+      return t('karigars.pending');
   }
 }
 

@@ -1,4 +1,5 @@
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Icon } from '@/components/ui/icon';
 import { Palette, Spacing, Type } from '@/constants/theme';
@@ -30,6 +31,7 @@ export function KarigarAssignModal({
   onRemove: () => void;
   submitLoading?: boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.backdrop}>
@@ -42,7 +44,7 @@ export function KarigarAssignModal({
             </View>
             <View style={styles.headerText}>
               <Text style={styles.title}>{title}</Text>
-              <Text style={styles.subtitle}>Select a karigar for this order</Text>
+              <Text style={styles.subtitle}>{t('karigarAssign.subtitle')}</Text>
             </View>
           </View>
 
@@ -55,7 +57,7 @@ export function KarigarAssignModal({
           <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
             {karigars.length === 0 ? (
               <Text style={styles.emptyText}>
-                No karigars available. Add karigars first from the Karigars tab.
+                {t('karigarAssign.noKarigars')}
               </Text>
             ) : (
               karigars.map((karigar) => {
@@ -77,7 +79,7 @@ export function KarigarAssignModal({
                       <Text style={styles.itemName}>{karigar.name}</Text>
                       {karigar.role ? <Text style={styles.itemRole}>{karigar.role}</Text> : null}
                     </View>
-                    {selected ? <Text style={styles.assignedText}>Assigned</Text> : null}
+                    {selected ? <Text style={styles.assignedText}>{t('karigarAssign.assigned')}</Text> : null}
                   </Pressable>
                 );
               })
@@ -86,14 +88,14 @@ export function KarigarAssignModal({
 
           <View style={styles.buttonRow}>
             <Pressable style={styles.cancelButton} onPress={onClose} disabled={submitLoading}>
-              <Text style={styles.cancelText}>Cancel</Text>
+              <Text style={styles.cancelText}>{t('common.cancel')}</Text>
             </Pressable>
             {currentId !== null ? (
               <Pressable
                 style={[styles.removeButton, submitLoading && styles.buttonDisabled]}
                 onPress={onRemove}
                 disabled={submitLoading}>
-                <Text style={styles.removeText}>Remove</Text>
+                <Text style={styles.removeText}>{t('common.remove')}</Text>
               </Pressable>
             ) : null}
           </View>

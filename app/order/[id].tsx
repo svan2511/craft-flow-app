@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 
 import { AppHeader } from '@/components/app-header';
 import type { KarigarOption } from '@/components/karigar-assign-modal';
@@ -40,6 +41,7 @@ const GOLD = '#8A6D3B';
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { t } = useTranslation();
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(0);
@@ -128,9 +130,9 @@ export default function OrderDetailScreen() {
     }
     setSharing(true);
     try {
-      await shareOrderPdf(order);
+      await shareOrderPdf(order, t);
     } catch {
-      showToast('Could not generate the PDF. Please try again.', { variant: 'error' });
+      showToast(t('orderDetail.pdfFailed'), { variant: 'error' });
     } finally {
       setSharing(false);
     }
@@ -152,10 +154,10 @@ export default function OrderDetailScreen() {
         authenticated: true,
       });
       setMaterialOpen(false);
-      showToast('Material cost updated.', { variant: 'success' });
+      showToast(t('orderDetail.materialUpdated'), { variant: 'success' });
       await reload();
     } catch (e) {
-      showToast(e instanceof Error ? e.message : 'Could not update material cost.', { variant: 'error' });
+      showToast(e instanceof Error ? e.message : t('orderDetail.materialUpdateFailed'), { variant: 'error' });
     } finally {
       setSavingCost(false);
     }
@@ -197,10 +199,10 @@ export default function OrderDetailScreen() {
         authenticated: true,
       });
       closeStageModal();
-      showToast(isEdit ? 'Stage updated.' : 'Stage added.', { variant: 'success' });
+      showToast(isEdit ? t('orderDetail.stageUpdated') : t('orderDetail.stageAdded'), { variant: 'success' });
       await reload();
     } catch (e) {
-      showToast(e instanceof Error ? e.message : 'Could not save stage.', { variant: 'error' });
+      showToast(e instanceof Error ? e.message : t('orderDetail.stageSaveFailed'), { variant: 'error' });
     } finally {
       setSavingStage(false);
     }
@@ -217,10 +219,10 @@ export default function OrderDetailScreen() {
         authenticated: true,
       });
       closeStageModal();
-      showToast('Stage removed.', { variant: 'success' });
+      showToast(t('orderDetail.stageRemoved'), { variant: 'success' });
       await reload();
     } catch (e) {
-      showToast(e instanceof Error ? e.message : 'Could not remove stage.', { variant: 'error' });
+      showToast(e instanceof Error ? e.message : t('orderDetail.stageRemoveFailed'), { variant: 'error' });
     } finally {
       setSavingStage(false);
     }
@@ -229,7 +231,7 @@ export default function OrderDetailScreen() {
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
       <AppHeader
-        title={order ? `Order #${order.order_no}` : `Order #${id}`}
+        title={order ? t('orderDetail.orderPrefix', { no: order.order_no }) : t('orderDetail.orderPrefix', { no: id })}
         showLogo={false}
         onBack={() => router.back()}
       />
@@ -244,13 +246,13 @@ export default function OrderDetailScreen() {
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
         {!order && !loading && !error ? (
-          <Text style={styles.errorText}>Order not found.</Text>
+          <Text style={styles.errorText}>{t('orderDetail.orderNotFound')}</Text>
         ) : null}
 
         {order ? (
           <>
             <View style={styles.productionCard}>
-              <Text style={styles.cardTitle}>Production Status</Text>
+              <Text style={styles.cardTitle}>{t('orderDetail.productionStatus')}</Text>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -299,18 +301,18 @@ export default function OrderDetailScreen() {
               </ScrollView>
               {order.stages.length === 0 ? (
                 <Text style={styles.stageEmptyText}>
-                  Stage progress will appear here once work is assigned.
+                  {t('orderDetail.stageProgressHint')}
                 </Text>
               ) : null}
             </View>
 
             <View style={styles.card}>
               <View style={styles.stageHeaderRow}>
-                <Text style={styles.cardTitle}>Production Plan</Text>
+                <Text style={styles.cardTitle}>{t('orderDetail.productionPlan')}</Text>
                 {canAssignNext ? (
                   <Pressable style={styles.addStageButton} onPress={openAddStage}>
                     <Icon name="add" size={16} color={Palette.onPrimary} />
-                    <Text style={styles.addStageText}>Assign Work</Text>
+                    <Text style={styles.addStageText}>{t('orderDetail.assignWork')}</Text>
                   </Pressable>
                 ) : null}
               </View>
@@ -319,7 +321,10 @@ export default function OrderDetailScreen() {
                 <View style={styles.gateRow}>
                   <Icon name="lock" size={14} color={Palette.outline} />
                   <Text style={styles.gateText}>
-                    {'Complete "' + previousStageName(nextStage) + '" first, then "' + nextStage + '" can be assigned.'}
+                    {t('orderDetail.stageHint', {
+                      prev: previousStageName(nextStage) ?? '',
+                      next: nextStage,
+                    })}
                   </Text>
                 </View>
               ) : null}
@@ -328,7 +333,7 @@ export default function OrderDetailScreen() {
                 <View style={styles.leadRow}>
                   <Icon name="engineering" size={16} color={Palette.primary} />
                   <Text style={styles.leadText}>
-                    Lead Karigar:{' '}
+                    {t('orderDetail.leadKarigar')}
                     <Text style={styles.leadStrong}>{order.karigar.name}</Text>
                   </Text>
                 </View>
@@ -336,16 +341,16 @@ export default function OrderDetailScreen() {
 
               <View style={styles.materialRow}>
                 <View style={styles.materialInfo}>
-                  <Text style={styles.materialLabel}>Material Cost</Text>
+                  <Text style={styles.materialLabel}>{t('orderDetail.materialCost')}</Text>
                   <Text style={styles.materialValue}>
                     {order.material_cost != null
                       ? formatRupees(order.material_cost)
-                      : 'Not set'}
+                      : t('orderDetail.notSet')}
                   </Text>
                 </View>
                 <Pressable style={styles.materialEdit} onPress={openMaterial} hitSlop={8}>
                   <Icon name="edit" size={16} color={Palette.onPrimary} />
-                  <Text style={styles.materialEditText}>Edit</Text>
+                  <Text style={styles.materialEditText}>{t('orderDetail.edit')}</Text>
                 </Pressable>
               </View>
 
@@ -353,12 +358,12 @@ export default function OrderDetailScreen() {
 
               {order.stages.length === 0 ? (
                 <Text style={styles.stageEmptyText}>
-                  No work assigned yet. Select a karigar and assign a stage with its cost.
+                  {t('orderDetail.noWorkYet')}
                 </Text>
               ) : (
                 <View style={styles.stageList}>
                   {order.stages.map((stage, index) => {
-                    const meta = stageStatusMeta(stage.status);
+                    const meta = stageStatusMeta(t, stage.status);
                     const done = stage.status === 'completed';
                     const unlocked = isStageUnlocked(stage.name);
                     return (
@@ -379,7 +384,7 @@ export default function OrderDetailScreen() {
                           <View style={styles.stageInfo}>
                             <Text style={styles.stageName}>{stage.name}</Text>
                             <Text style={styles.stageKarigar}>
-                              {stage.karigar ? stage.karigar.name : 'No karigar assigned'}
+                              {stage.karigar ? stage.karigar.name : t('orderDetail.noKarigarAssigned')}
                             </Text>
                           </View>
                           <View style={styles.stageRight}>
@@ -404,14 +409,15 @@ export default function OrderDetailScreen() {
               {order.stages.length > 0 ? (
                 <View style={styles.stageTotalRow}>
                   <Text style={styles.stageTotalLabel}>
-                    Total Work Cost ({order.stages.length} stage
-                    {order.stages.length > 1 ? 's' : ''})
+                    {order.stages.length === 1
+                      ? t('orderDetail.totalWorkCost', { count: order.stages.length })
+                      : t('orderDetail.totalWorkCostS', { count: order.stages.length })}
                   </Text>
                   <Text style={styles.stageTotalValue}>{formatRupees(order.labor_cost)}</Text>
                 </View>
               ) : null}
               {!nextStage ? (
-                <Text style={styles.stageAllAssigned}>All stages have been assigned.</Text>
+                <Text style={styles.stageAllAssigned}>{t('orderDetail.allAssigned')}</Text>
               ) : null}
             </View>
 
@@ -426,7 +432,7 @@ export default function OrderDetailScreen() {
                     <View style={styles.phoneRow}>
                       <Icon name="phone" size={14} color={Palette.onSurfaceVariant} />
                       <Text style={styles.phoneText}>
-                        {order.customer.phone ? `+91 ${order.customer.phone}` : 'No phone'}
+                        {order.customer.phone ? `+91 ${order.customer.phone}` : t('common.noPhone')}
                       </Text>
                     </View>
                   </View>
@@ -438,7 +444,7 @@ export default function OrderDetailScreen() {
               <View style={styles.itemHeader}>
                 <Text style={styles.itemTitle}>{order.item_name}</Text>
                 <Text style={styles.dueText}>
-                  Due: {order.delivery_date ? formatDate(order.delivery_date) : 'Not set'}
+                  {t('orderDetail.due', { date: order.delivery_date ? formatDate(order.delivery_date) : t('orderDetail.notSet') })}
                 </Text>
               </View>
               {designImagesList.length > 0 ? (
@@ -472,13 +478,13 @@ export default function OrderDetailScreen() {
               {order.customization_notes ? (
                 <View style={styles.notesBox}>
                   <Text style={styles.notesText}>
-                    <Text style={styles.notesStrong}>Customization Notes: </Text>
+                    <Text style={styles.notesStrong}>{t('orderDetail.customizationNotes')}</Text>
                     {order.customization_notes}
                   </Text>
                 </View>
               ) : null}
               <Text style={styles.metaText}>
-                Order placed on {formatDate(order.created_at)}
+                {t('orderDetail.orderPlaced', { date: formatDate(order.created_at) })}
               </Text>
             </View>
 
@@ -488,7 +494,7 @@ export default function OrderDetailScreen() {
                 onPress={() => setPaymentOpen(true)}
                 disabled={order.status === 'completed' && order.balance_due <= 0}>
                 <Icon name="payments" size={18} color={Palette.onSecondary} />
-                <Text style={styles.recordPaymentText}>Add Payment</Text>
+                <Text style={styles.recordPaymentText}>{t('orderDetail.addPayment')}</Text>
               </Pressable>
               <Pressable
                 style={[styles.recordPayment, styles.shareWhatsapp]}
@@ -496,35 +502,35 @@ export default function OrderDetailScreen() {
                 disabled={sharing}>
                 <Icon name="chat" size={18} color={Palette.onPrimary} />
                 <Text style={styles.shareWhatsappText}>
-                  {sharing ? 'Preparing…' : 'WhatsApp Share'}
+                  {sharing ? t('orderDetail.preparing') : t('orderDetail.whatsappShare')}
                 </Text>
               </Pressable>
             </View>
 
             <View style={styles.card}>
-              <Text style={[styles.cardTitle, styles.financialTitle]}>Financials</Text>
+              <Text style={[styles.cardTitle, styles.financialTitle]}>{t('orderDetail.financials')}</Text>
               <View style={styles.financialRow}>
-                <Text style={styles.financialLabel}>Customer Price</Text>
+                <Text style={styles.financialLabel}>{t('orderDetail.customerPrice')}</Text>
                 <Text style={styles.financialValueStrong}>{formatRupees(order.total_amount)}</Text>
               </View>
               {order.labor_paid > 0 ? (
                 <View style={styles.financialRow}>
-                  <Text style={styles.financialLabel}>Labor Paid</Text>
+                  <Text style={styles.financialLabel}>{t('orderDetail.laborPaid')}</Text>
                   <Text style={styles.financialCost}>- {formatRupees(order.labor_paid)}</Text>
                 </View>
               ) : null}
               {order.material_cost != null ? (
                 <View style={styles.financialRow}>
-                  <Text style={styles.financialLabel}>Material Cost</Text>
+                  <Text style={styles.financialLabel}>{t('orderDetail.materialCost')}</Text>
                   <Text style={styles.financialCost}>- {formatRupees(order.material_cost)}</Text>
                 </View>
               ) : null}
               <View style={styles.financialRow}>
-                <Text style={styles.financialLabel}>Advance Received</Text>
+                <Text style={styles.financialLabel}>{t('orderDetail.advanceReceived')}</Text>
                 <Text style={styles.financialValue}>{formatRupees(order.advance_paid)}</Text>
               </View>
               <View style={styles.profitBox}>
-                <Text style={styles.profitLabel}>Balance Due</Text>
+                <Text style={styles.profitLabel}>{t('orderDetail.balanceDue')}</Text>
                 <Text style={styles.profitValue}>{formatRupees(order.balance_due)}</Text>
               </View>
               <View
@@ -533,8 +539,8 @@ export default function OrderDetailScreen() {
                   order.net_profit < 0 && styles.netProfitBoxNegative,
                 ]}>
                 <View>
-                  <Text style={styles.netProfitLabel}>Net Profit</Text>
-                  <Text style={styles.netProfitHint}>Price − material − labor paid</Text>
+                  <Text style={styles.netProfitLabel}>{t('orderDetail.netProfit')}</Text>
+                  <Text style={styles.netProfitHint}>{t('orderDetail.netProfitHint')}</Text>
                 </View>
                 <Text
                   style={[
@@ -548,10 +554,10 @@ export default function OrderDetailScreen() {
             </View>
 
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Payment Ledger</Text>
+              <Text style={styles.cardTitle}>{t('orderDetail.paymentLedger')}</Text>
               <View style={styles.payments}>
                 {order.payments.length === 0 ? (
-                  <Text style={styles.paymentsEmpty}>No payments recorded yet.</Text>
+                  <Text style={styles.paymentsEmpty}>{t('orderDetail.noPayments')}</Text>
                 ) : (
                   order.payments.map((payment) => (
                     <View key={payment.id} style={styles.paymentRow}>
@@ -571,7 +577,7 @@ export default function OrderDetailScreen() {
                   ))
                 )}
                 <View style={styles.remainingRow}>
-                  <Text style={styles.remainingLabel}>Remaining Balance</Text>
+                  <Text style={styles.remainingLabel}>{t('orderDetail.remainingBalance')}</Text>
                   <Text style={styles.remainingValue}>{formatRupees(order.balance_due)}</Text>
                 </View>
               </View>
@@ -605,7 +611,7 @@ export default function OrderDetailScreen() {
       {order ? (
         <StageModal
           visible={stageModalOpen}
-          title={editingStage ? 'Edit Work' : 'Assign Work'}
+          title={editingStage ? t('stageModal.editWork') : t('stageModal.assignWork')}
           lockedName={editingStage ? editingStage.name : nextStage}
           statusLocked={editingStage ? !isStageUnlocked(editingStage.name) : false}
           initial={editingStage}

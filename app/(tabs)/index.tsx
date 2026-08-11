@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, type TextStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 
 import { MetricCard } from '@/components/metric-card';
 import { PaymentModal } from '@/components/payment-modal';
@@ -49,6 +50,7 @@ type DashboardSummary = {
 
 export default function DashboardScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { showToast } = useToast();
   const [paymentOrder, setPaymentOrder] = useState<number | null>(null);
   const [pendingDelivery, setPendingDelivery] = useState<DashboardSummary['urgent_deliveries'][number] | null>(null);
@@ -78,14 +80,14 @@ export default function DashboardScreen() {
         body: { status: 'completed' },
         authenticated: true,
       });
-      showToast('Order delivered.', { variant: 'success' });
+      showToast(t('dashboard.orderDelivered'), { variant: 'success' });
 
       const res = await apiRequest<{ order: ApiOrderDetail }>(`/orders/${item.id}`, {
         authenticated: true,
       });
-      await shareOrderPdf(res.order);
+      await shareOrderPdf(res.order, t);
     } catch (e) {
-      showToast(e instanceof Error ? e.message : 'Could not deliver the order.', { variant: 'error' });
+      showToast(e instanceof Error ? e.message : t('dashboard.couldNotDeliver'), { variant: 'error' });
     } finally {
       setDelivering(false);
       await reload();
@@ -112,7 +114,7 @@ export default function DashboardScreen() {
                 <Image source={require('@/assets/images/logo.png')} style={styles.heroAvatarImg} contentFit="cover" />
               </View>
               <View style={styles.heroIdentity}>
-                <Text style={styles.heroGreeting}>Good day</Text>
+                <Text style={styles.heroGreeting}>{t('dashboard.goodDay')}</Text>
                 <Text style={styles.heroTitle} numberOfLines={1}>
                   {workshop}
                 </Text>
@@ -126,17 +128,17 @@ export default function DashboardScreen() {
 
             <View style={styles.heroStats}>
               <View style={styles.heroStat}>
-                <Text style={styles.heroStatLabel}>Today</Text>
+                <Text style={styles.heroStatLabel}>{t('dashboard.today')}</Text>
                 <Text style={styles.heroStatValue}>{formatRupees(data?.revenue.today ?? 0)}</Text>
               </View>
               <View style={styles.heroStatDivider} />
               <View style={styles.heroStat}>
-                <Text style={styles.heroStatLabel}>This Week</Text>
+                <Text style={styles.heroStatLabel}>{t('dashboard.thisWeek')}</Text>
                 <Text style={styles.heroStatValue}>{formatRupees(data?.revenue.this_week ?? 0)}</Text>
               </View>
               <View style={styles.heroStatDivider} />
               <View style={styles.heroStat}>
-                <Text style={styles.heroStatLabel}>This Month</Text>
+                <Text style={styles.heroStatLabel}>{t('dashboard.thisMonth')}</Text>
                 <Text style={styles.heroStatValue}>{formatRupees(data?.revenue.this_month ?? 0)}</Text>
               </View>
             </View>
@@ -148,9 +150,9 @@ export default function DashboardScreen() {
                 <View style={styles.sectionIcon}>
                   <Icon name="assignment" size={15} color={Palette.primary} />
                 </View>
-                <Text style={styles.sectionTitle}>Orders Cards</Text>
+                <Text style={styles.sectionTitle}>{t('dashboard.ordersCards')}</Text>
               </View>
-              <StatusBadge label={`${data?.metrics.total_orders ?? 0} total`} variant="new" />
+              <StatusBadge label={t('dashboard.total', { count: data?.metrics.total_orders ?? 0 })} variant="new" />
             </View>
             <View style={styles.jobSegments}>
               <Pressable
@@ -159,7 +161,7 @@ export default function DashboardScreen() {
                 <Text style={[styles.jobSegmentValue, { color: Palette.primary }]}>
                   {data?.metrics.new_orders ?? 0}
                 </Text>
-                <Text style={styles.jobSegmentLabel}>New</Text>
+                <Text style={styles.jobSegmentLabel}>{t('dashboard.new')}</Text>
               </Pressable>
               <View style={styles.jobSegDivider} />
               <Pressable
@@ -168,7 +170,7 @@ export default function DashboardScreen() {
                 <Text style={[styles.jobSegmentValue, { color: Palette.warning }]}>
                   {data?.metrics.active_orders ?? 0}
                 </Text>
-                <Text style={styles.jobSegmentLabel}>Active</Text>
+                <Text style={styles.jobSegmentLabel}>{t('dashboard.active')}</Text>
               </Pressable>
               <View style={styles.jobSegDivider} />
               <Pressable
@@ -177,7 +179,7 @@ export default function DashboardScreen() {
                 <Text style={[styles.jobSegmentValue, { color: '#3E6B4F' }]}>
                   {data?.metrics.completed_orders ?? 0}
                 </Text>
-                <Text style={styles.jobSegmentLabel}>Completed</Text>
+                <Text style={styles.jobSegmentLabel}>{t('dashboard.completed')}</Text>
               </Pressable>
               <View style={styles.jobSegDivider} />
               <Pressable
@@ -186,7 +188,7 @@ export default function DashboardScreen() {
                 <Text style={[styles.jobSegmentValue, { color: Palette.tertiary }]}>
                   {data?.metrics.delivered_orders ?? 0}
                 </Text>
-                <Text style={styles.jobSegmentLabel}>Delivered</Text>
+                <Text style={styles.jobSegmentLabel}>{t('dashboard.delivered')}</Text>
               </Pressable>
             </View>
           </View>
@@ -196,9 +198,9 @@ export default function DashboardScreen() {
               icon="account_balance_wallet"
               iconColor={Palette.secondary}
               iconBg="rgba(122,106,79,0.12)"
-              badgeLabel="Pending"
+              badgeLabel={t('delivery.pending')}
               badgeVariant="pending"
-              label="Market Dues"
+              label={t('dashboard.marketDues')}
               value={formatRupees(data?.metrics.outstanding_balance ?? 0)}
               valueColor={Palette.onSurface}
               valueStyle={currencyValue}
@@ -208,9 +210,9 @@ export default function DashboardScreen() {
               icon="trending_up"
               iconColor={Palette.primary}
               iconBg="rgba(138,109,59,0.12)"
-              badgeLabel="Month"
+              badgeLabel={t('dashboard.monthlyHint')}
               badgeVariant="month"
-              label="Collection"
+              label={t('dashboard.collection')}
               value={formatRupees(data?.revenue.this_month ?? 0)}
               valueColor={Palette.onSurface}
               valueStyle={currencyValue}
@@ -220,9 +222,9 @@ export default function DashboardScreen() {
               icon="groups"
               iconColor={Palette.tertiary}
               iconBg="rgba(107,107,94,0.12)"
-              badgeLabel="Team"
+              badgeLabel={t('dashboard.teamHint')}
               badgeVariant="new"
-              label="Karigars"
+              label={t('dashboard.karigars')}
               value={String(data?.metrics.karigars ?? 0)}
               containerStyle={styles.metricCard}
             />
@@ -230,9 +232,9 @@ export default function DashboardScreen() {
               icon="support_agent"
               iconColor={Palette.primary}
               iconBg="rgba(138,109,59,0.12)"
-              badgeLabel="Clients"
+              badgeLabel={t('dashboard.clientsHint')}
               badgeVariant="month"
-              label="Customers"
+              label={t('dashboard.customers')}
               value={String(data?.metrics.customers ?? 0)}
               containerStyle={styles.metricCard}
             />
@@ -244,32 +246,32 @@ export default function DashboardScreen() {
                 <Icon name="trending_up" size={16} color={Palette.onPrimary} />
               </View>
               <View style={styles.profitTitleWrap}>
-                <Text style={styles.profitTitle}>Net Profit — This Month</Text>
-                <Text style={styles.profitSubtitle}>Price − material − labor</Text>
+                <Text style={styles.profitTitle}>{t('dashboard.netProfitMonth')}</Text>
+                <Text style={styles.profitSubtitle}>{t('dashboard.profitSubtitle')}</Text>
               </View>
             </View>
             <View style={styles.profitBreakdown}>
               <View style={styles.profitStat}>
-                <Text style={styles.profitStatLabel}>Gross Sales</Text>
+                <Text style={styles.profitStatLabel}>{t('dashboard.grossSales')}</Text>
                 <Text style={styles.profitStatValue}>{formatRupees(data?.profit.this_month.gross ?? 0)}</Text>
               </View>
               <View style={styles.profitStatDivider} />
               <View style={styles.profitStat}>
-                <Text style={styles.profitStatLabel}>Material</Text>
+                <Text style={styles.profitStatLabel}>{t('dashboard.material')}</Text>
                 <Text style={[styles.profitStatValue, styles.profitStatCost]}>
                   - {formatRupees(data?.profit.this_month.material ?? 0)}
                 </Text>
               </View>
               <View style={styles.profitStatDivider} />
               <View style={styles.profitStat}>
-                <Text style={styles.profitStatLabel}>Labor</Text>
+                <Text style={styles.profitStatLabel}>{t('dashboard.labor')}</Text>
                 <Text style={[styles.profitStatValue, styles.profitStatCost]}>
                   - {formatRupees(data?.profit.this_month.labor ?? 0)}
                 </Text>
               </View>
               <View style={styles.profitStatDivider} />
               <View style={styles.profitStat}>
-                <Text style={styles.profitStatLabel}>Net Profit</Text>
+                <Text style={styles.profitStatLabel}>{t('dashboard.netProfit')}</Text>
                 <Text
                   style={[
                     styles.profitStatValue,
@@ -288,7 +290,7 @@ export default function DashboardScreen() {
                 <View style={styles.sectionIcon}>
                   <Icon name="bolt" size={15} color={Palette.primary} />
                 </View>
-                <Text style={styles.sectionTitle}>Quick Actions</Text>
+                <Text style={styles.sectionTitle}>{t('dashboard.quickActions')}</Text>
               </View>
             </View>
             <View style={styles.actions}>
@@ -298,7 +300,7 @@ export default function DashboardScreen() {
                   onPress={() => router.push('/order/new')}>
                   <LinearGradient colors={[Palette.primary, '#6E552A']} style={styles.actionInner}>
                     <Icon name="add" size={18} color={Palette.onPrimary} />
-                    <Text style={styles.actionText}>New Order</Text>
+                    <Text style={styles.actionText}>{t('dashboard.newOrder')}</Text>
                   </LinearGradient>
                 </Pressable>
                 <Pressable
@@ -306,7 +308,7 @@ export default function DashboardScreen() {
                   onPress={() => router.push('/(tabs)/karigars')}>
                   <View style={[styles.actionInner, styles.actionSecondary]}>
                     <Icon name="payments" size={18} color={Palette.secondary} />
-                    <Text style={[styles.actionText, styles.actionTextSecondary]}>Advance</Text>
+                    <Text style={[styles.actionText, styles.actionTextSecondary]}>{t('dashboard.advance')}</Text>
                   </View>
                 </Pressable>
               </View>
@@ -315,7 +317,7 @@ export default function DashboardScreen() {
                 onPress={() => router.push('/(tabs)/job-cards')}>
                 <View style={[styles.actionInner, styles.actionOutline]}>
                   <Icon name="receipt_long" size={18} color={Palette.primary} />
-                  <Text style={[styles.actionText, styles.actionTextOutline]}>Payment</Text>
+                  <Text style={[styles.actionText, styles.actionTextOutline]}>{t('dashboard.payment')}</Text>
                 </View>
               </Pressable>
             </View>
@@ -327,7 +329,7 @@ export default function DashboardScreen() {
                 <View style={[styles.sectionIcon, styles.sectionIconDanger]}>
                   <Icon name="warning" size={15} color={Palette.error} />
                 </View>
-                <Text style={styles.sectionTitle}>Urgent Deliveries</Text>
+                <Text style={styles.sectionTitle}>{t('dashboard.urgentDeliveries')}</Text>
               </View>
               {urgent.length > 0 ? <StatusBadge label={`${urgent.length}`} variant="overdue" /> : null}
             </View>
@@ -335,7 +337,7 @@ export default function DashboardScreen() {
             {error ? (
               <Text style={styles.emptyText}>{error}</Text>
             ) : urgent.length === 0 && !loading ? (
-              <Text style={styles.emptyText}>No urgent deliveries.</Text>
+              <Text style={styles.emptyText}>{t('dashboard.noUrgent')}</Text>
             ) : (
               <View style={styles.deliveryList}>
                 {urgent.map((item) => (
@@ -376,9 +378,9 @@ export default function DashboardScreen() {
       <ConfirmModal
         visible={pendingDelivery !== null}
         icon="inventory_2"
-        title="Deliver order"
-        message="Mark as delivered and send the final bill on WhatsApp?"
-        confirmLabel="Deliver"
+        title={t('dashboard.deliverOrder')}
+        message={t('dashboard.deliverMessage')}
+        confirmLabel={t('dashboard.deliverAction')}
         variant="success"
         submitting={delivering}
         onCancel={() => setPendingDelivery(null)}
@@ -410,9 +412,10 @@ function DeliveryCard({
   onDeliver: () => void;
   onCollect: () => void;
 }) {
+  const { t } = useTranslation();
   const tone = deliveryTone(item);
   const accent = tone === 'readyDue' ? Palette.tertiary : tone === 'readyPaid' ? '#3E6B4F' : Palette.secondary;
-  const badge = deliveryBadge(item.delivery_date);
+  const badge = deliveryBadge(t, item.delivery_date);
 
   return (
     <View style={styles.deliveryCard}>
@@ -425,7 +428,7 @@ function DeliveryCard({
           {tone === 'upcoming' ? (
             badge ? <StatusBadge label={badge.label} variant={badge.variant} /> : null
           ) : (
-            <StatusBadge label="Ready to Deliver" variant="ready" />
+            <StatusBadge label={t('status.readyToDeliver')} variant="ready" />
           )}
         </View>
 
@@ -455,7 +458,7 @@ function DeliveryCard({
         <View style={styles.deliveryBottom}>
           <View>
             <Text style={styles.deliveryLabel}>
-              {tone === 'readyDue' ? 'Pending' : tone === 'readyPaid' ? 'Payment' : 'Bal. Due'}
+              {tone === 'readyDue' ? t('delivery.pending') : tone === 'readyPaid' ? t('delivery.payment') : t('delivery.balanceDue')}
             </Text>
             <Text
               style={[
@@ -463,13 +466,13 @@ function DeliveryCard({
                 tone === 'readyPaid' && { color: '#3E6B4F' },
                 tone === 'readyDue' && { color: Palette.tertiary },
               ]}>
-              {tone === 'readyPaid' ? 'Full Paid' : formatRupees(item.balance_due)}
+              {tone === 'readyPaid' ? t('status.fullPaid') : formatRupees(item.balance_due)}
             </Text>
           </View>
 
           {tone === 'upcoming' ? (
             <Pressable style={({ pressed }) => [styles.viewButton, pressed && styles.viewButtonPressed]} onPress={onView}>
-              <Text style={styles.viewButtonText}>View</Text>
+              <Text style={styles.viewButtonText}>{t('common.view')}</Text>
               <Icon name="arrow_forward" size={14} color={Palette.onPrimary} />
             </Pressable>
           ) : (
@@ -479,7 +482,7 @@ function DeliveryCard({
                   style={({ pressed }) => [styles.ghostButton, pressed && styles.viewButtonPressed]}
                   onPress={onCollect}>
                   <Icon name="payments" size={15} color={Palette.tertiary} />
-                  <Text style={[styles.ghostButtonText, { color: Palette.tertiary }]}>Collect</Text>
+                  <Text style={[styles.ghostButtonText, { color: Palette.tertiary }]}>{t('common.collect')}</Text>
                 </Pressable>
               ) : null}
               {deliverables ? (
@@ -487,7 +490,7 @@ function DeliveryCard({
                   style={({ pressed }) => [styles.deliverButton, pressed && styles.viewButtonPressed]}
                   onPress={onDeliver}>
                   <Icon name="check" size={15} color={Palette.onPrimary} />
-                  <Text style={styles.viewButtonText}>Deliver</Text>
+                  <Text style={styles.viewButtonText}>{t('common.deliver')}</Text>
                 </Pressable>
               ) : null}
             </View>

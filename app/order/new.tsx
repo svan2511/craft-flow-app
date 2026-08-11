@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
+import { useTranslation } from 'react-i18next';
 
 import { AppHeader } from '@/components/app-header';
 import { Icon } from '@/components/ui/icon';
@@ -51,15 +52,16 @@ function toDateInput(date: Date): string {
 
 const MAX_DESIGN_IMAGES = 3;
 
-const QUICK_DATES = [
-  { label: '+7 days', days: 7 },
-  { label: '+15 days', days: 15 },
-  { label: '+30 days', days: 30 },
-];
-
 export default function NewOrderScreen() {
   const router = useRouter();
   const { showToast } = useToast();
+  const { t } = useTranslation();
+
+  const QUICK_DATES = [
+    { label: t('orderNew.quickDates', { days: 7 }), days: 7 },
+    { label: t('orderNew.quickDates', { days: 15 }), days: 15 },
+    { label: t('orderNew.quickDates', { days: 30 }), days: 30 },
+  ];
 
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -127,12 +129,12 @@ export default function NewOrderScreen() {
   const pickDesignImages = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      showToast('Photo library access is needed to attach design photos.', { variant: 'error' });
+      showToast(t('orderNew.photoLibraryNeeded'), { variant: 'error' });
       return;
     }
     const remaining = Math.max(0, MAX_DESIGN_IMAGES - designImages.length);
     if (remaining === 0) {
-      showToast(`You can add up to ${MAX_DESIGN_IMAGES} design photos.`, { variant: 'error' });
+      showToast(t('orderNew.photoLimit', { count: MAX_DESIGN_IMAGES }), { variant: 'error' });
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -167,7 +169,7 @@ export default function NewOrderScreen() {
               ? {
                   ...img,
                   uploading: false,
-                  error: e instanceof Error ? e.message : 'Image upload failed.',
+                  error: e instanceof Error ? e.message : t('orderNew.uploadFailed'),
                 }
               : img,
           ),
@@ -182,39 +184,39 @@ export default function NewOrderScreen() {
 
   const submit = async () => {
     if (customerPhone.trim().length !== 10) {
-      showToast('Customer phone number (10 digits) is required.', { variant: 'error' });
+      showToast(t('orderNew.phoneRequired'), { variant: 'error' });
       return;
     }
     if (!customerName.trim()) {
-      showToast('Customer name is required.', { variant: 'error' });
+      showToast(t('orderNew.nameRequired'), { variant: 'error' });
       return;
     }
     if (!itemName.trim()) {
-      showToast('Item name is required.', { variant: 'error' });
+      showToast(t('orderNew.itemRequired'), { variant: 'error' });
       return;
     }
     const total = parseFloat(totalAmount);
     if (!Number.isFinite(total) || total <= 0) {
-      showToast('Enter a valid total amount.', { variant: 'error' });
+      showToast(t('orderNew.amountInvalid'), { variant: 'error' });
       return;
     }
     const advance = advancePaid.trim() === '' ? undefined : parseFloat(advancePaid);
     if (advance !== undefined && (!Number.isFinite(advance) || advance < 0)) {
-      showToast('Advance paid must be a valid amount.', { variant: 'error' });
+      showToast(t('orderNew.advanceInvalid'), { variant: 'error' });
       return;
     }
     if (advance !== undefined && advance > total) {
-      showToast('Advance paid cannot exceed the total amount.', { variant: 'error' });
+      showToast(t('orderNew.advanceExceeds'), { variant: 'error' });
       return;
     }
 
     if (designImages.some((img) => img.uploading)) {
-      showToast('Some design photos are still uploading. Please wait a moment.', { variant: 'info' });
+      showToast(t('orderNew.photoUploading'), { variant: 'info' });
       return;
     }
     const failedUpload = designImages.find((img) => img.error !== null);
     if (failedUpload) {
-      showToast(`A design photo failed to upload: ${failedUpload.error}. Please remove it and try again.`, {
+      showToast(t('orderNew.photoUploadError', { error: failedUpload.error }), {
         variant: 'error',
       });
       return;
@@ -242,14 +244,14 @@ export default function NewOrderScreen() {
         timeout: 90000,
       });
       const orderId = res.order?.id;
-      showToast('Order created.', { variant: 'success' });
+      showToast(t('orderNew.orderCreated'), { variant: 'success' });
       router.replace(
         orderId
           ? { pathname: '/order/[id]', params: { id: String(orderId) } }
           : '/(tabs)/job-cards',
       );
     } catch (e) {
-      showToast(e instanceof Error ? e.message : 'Could not create order.', { variant: 'error' });
+      showToast(e instanceof Error ? e.message : t('orderNew.createFailed'), { variant: 'error' });
     } finally {
       setSubmitting(false);
     }
@@ -257,7 +259,7 @@ export default function NewOrderScreen() {
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
-      <AppHeader title="New Order" showLogo={false} onBack={() => router.back()} />
+      <AppHeader title={t('orderNew.title')} showLogo={false} onBack={() => router.back()} />
 
       <ScrollView
         style={styles.scroll}
@@ -265,27 +267,27 @@ export default function NewOrderScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled">
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Customer</Text>
+          <Text style={styles.sectionLabel}>{t('orderNew.customerSection')}</Text>
 
           <View style={styles.field}>
-            <Text style={styles.label}>Phone Number</Text>
+            <Text style={styles.label}>{t('orderNew.phoneNumber')}</Text>
             <TextInput
               style={styles.input}
               value={customerPhone}
-              onChangeText={(t) => {
-                const digits = t.replace(/[^\d]/g, '').slice(0, 10);
+              onChangeText={(tt) => {
+                const digits = tt.replace(/[^\d]/g, '').slice(0, 10);
                 setCustomerPhone(digits);
                 if (digits !== customerPhone) {
                   resetCustomer();
                 }
               }}
-              placeholder="10-digit mobile number"
+              placeholder={t('orderNew.phonePlaceholder')}
               placeholderTextColor={Palette.outline}
               keyboardType="number-pad"
               editable={!selectedCustomer}
             />
             {customerPhone.length === 10 && searchingCustomer ? (
-              <Text style={styles.customerHint}>Searching customer…</Text>
+              <Text style={styles.customerHint}>{t('orderNew.searchingCustomer')}</Text>
             ) : null}
           </View>
 
@@ -299,8 +301,8 @@ export default function NewOrderScreen() {
                   <Text style={styles.matchedName}>{selectedCustomer.name}</Text>
                   <Text style={styles.matchedMeta}>
                     {selectedCustomer.total_orders > 0
-                      ? `${selectedCustomer.total_orders} order(s)`
-                      : 'New customer'}
+                      ? t('orderNew.orderCount', { count: selectedCustomer.total_orders })
+                      : t('orderNew.newCustomer')}
                   </Text>
                 </View>
               </View>
@@ -322,7 +324,7 @@ export default function NewOrderScreen() {
                     <View style={styles.matchedText}>
                       <Text style={styles.matchedName}>{c.name}</Text>
                       <Text style={styles.matchedMeta}>
-                        {c.total_orders > 0 ? `${c.total_orders} order(s)` : 'New customer'}
+                        {c.total_orders > 0 ? t('orderNew.orderCount', { count: c.total_orders }) : t('orderNew.newCustomer')}
                       </Text>
                     </View>
                     <Icon name="chevron_right" size={18} color={Palette.onSurfaceVariant} />
@@ -332,7 +334,7 @@ export default function NewOrderScreen() {
             ) : (
               <View style={styles.newCustomerNote}>
                 <Icon name="person_add" size={16} color={Palette.primary} />
-                <Text style={styles.newCustomerText}>No customer found — add a new one below.</Text>
+                <Text style={styles.newCustomerText}>{t('orderNew.noCustomerFound')}</Text>
               </View>
             )
           ) : null}
@@ -340,12 +342,12 @@ export default function NewOrderScreen() {
           {!selectedCustomer &&
           (customerPhone.length !== 10 || (customerSearched && matchedCustomers.length === 0)) ? (
             <View style={styles.field}>
-              <Text style={styles.label}>Full Name</Text>
+              <Text style={styles.label}>{t('orderNew.fullName')}</Text>
               <TextInput
                 style={styles.input}
                 value={customerName}
                 onChangeText={setCustomerName}
-                placeholder="e.g. Rajesh Sharma"
+                placeholder={t('orderNew.fullNamePlaceholder')}
                 placeholderTextColor={Palette.outline}
                 autoCorrect={false}
               />
@@ -354,20 +356,20 @@ export default function NewOrderScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Order</Text>
+          <Text style={styles.sectionLabel}>{t('orderNew.orderSection')}</Text>
           <View style={styles.field}>
-            <Text style={styles.label}>Item Name</Text>
+            <Text style={styles.label}>{t('orderNew.itemName')}</Text>
             <TextInput
               style={styles.input}
               value={itemName}
               onChangeText={setItemName}
-              placeholder="e.g. Custom Dining Table"
+              placeholder={t('orderNew.itemNamePlaceholder')}
               placeholderTextColor={Palette.outline}
               autoCorrect={false}
             />
           </View>
           <View style={styles.field}>
-            <Text style={styles.label}>Design Photos (optional)</Text>
+            <Text style={styles.label}>{t('orderNew.designPhotos')}</Text>
             <View style={styles.photoGrid}>
               {designImages.map((img, index) => (
                 <View key={`${img.localUri}-${index}`} style={styles.photoTile}>
@@ -393,18 +395,18 @@ export default function NewOrderScreen() {
               {designImages.length < MAX_DESIGN_IMAGES ? (
                 <Pressable style={styles.photoAddTile} onPress={pickDesignImages}>
                   <Icon name="add_photo_alternate" size={24} color={Palette.primary} />
-                  <Text style={styles.photoAddText}>Add</Text>
+                  <Text style={styles.photoAddText}>{t('orderNew.addPhotos')}</Text>
                 </Pressable>
               ) : null}
             </View>
             {designImages.length > 0 ? (
               <Text style={styles.photoHint}>
-                {designImages.length} of {MAX_DESIGN_IMAGES} photos added
+                {t('orderNew.photosAdded', { count: designImages.length, max: MAX_DESIGN_IMAGES })}
               </Text>
             ) : null}
           </View>
           <View style={styles.field}>
-            <Text style={styles.label}>Total Amount (₹)</Text>
+            <Text style={styles.label}>{t('orderNew.totalAmount')}</Text>
             <TextInput
               style={styles.input}
               value={totalAmount}
@@ -415,7 +417,7 @@ export default function NewOrderScreen() {
             />
           </View>
           <View style={styles.field}>
-            <Text style={styles.label}>Advance Paid (₹) — optional</Text>
+            <Text style={styles.label}>{t('orderNew.advancePaid')}</Text>
             <TextInput
               style={styles.input}
               value={advancePaid}
@@ -426,13 +428,13 @@ export default function NewOrderScreen() {
             />
           </View>
           <View style={styles.field}>
-            <Text style={styles.label}>Delivery Date (optional)</Text>
+            <Text style={styles.label}>{t('orderNew.deliveryDate')}</Text>
             <View style={styles.dateInputShell}>
               <TextInput
                 style={styles.dateInput}
                 value={deliveryDate}
                 onChangeText={validateDate}
-                placeholder="YYYY-MM-DD"
+                placeholder={t('orderNew.datePlaceholder')}
                 placeholderTextColor={Palette.outline}
                 autoCorrect={false}
                 autoCapitalize="none"
@@ -468,7 +470,7 @@ export default function NewOrderScreen() {
                 />
                 {Platform.OS === 'ios' ? (
                   <Pressable style={styles.datePickerDone} onPress={() => setShowDatePicker(false)}>
-                    <Text style={styles.datePickerDoneText}>Done</Text>
+                    <Text style={styles.datePickerDoneText}>{t('common.done')}</Text>
                   </Pressable>
                 ) : null}
               </View>
@@ -485,7 +487,7 @@ export default function NewOrderScreen() {
               ))}
               {deliveryDate.trim() !== '' ? (
                 <Pressable style={styles.quickDateChip} onPress={() => setDeliveryDate('')}>
-                  <Text style={styles.quickDateText}>Clear</Text>
+                  <Text style={styles.quickDateText}>{t('orderNew.clearDate')}</Text>
                 </Pressable>
               ) : null}
             </View>
@@ -493,14 +495,14 @@ export default function NewOrderScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Details</Text>
+          <Text style={styles.sectionLabel}>{t('orderNew.detailsSection')}</Text>
           <View style={styles.field}>
-            <Text style={styles.label}>Customization Notes (optional)</Text>
+            <Text style={styles.label}>{t('orderNew.customizationNotes')}</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
               value={notes}
               onChangeText={setNotes}
-              placeholder="e.g. Dark walnut finish, bullnose edge…"
+              placeholder={t('orderNew.notesPlaceholder')}
               placeholderTextColor={Palette.outline}
               multiline
               numberOfLines={3}
@@ -508,8 +510,8 @@ export default function NewOrderScreen() {
           </View>
           <View style={styles.switchRow}>
             <View style={styles.switchTextWrap}>
-              <Text style={styles.label}>Send order confirmation on WhatsApp</Text>
-              <Text style={styles.switchHint}>Customer phone required to send</Text>
+              <Text style={styles.label}>{t('orderNew.whatsappConfirm')}</Text>
+              <Text style={styles.switchHint}>{t('orderNew.whatsappHint')}</Text>
             </View>
             <Switch
               value={sendWhatsapp}
@@ -525,7 +527,7 @@ export default function NewOrderScreen() {
           onPress={submit}
           disabled={submitting}>
           <Icon name="add" size={22} color={Palette.onPrimary} />
-          <Text style={styles.submitText}>{submitting ? 'Creating…' : 'Create Order'}</Text>
+          <Text style={styles.submitText}>{submitting ? t('orderNew.creating') : t('orderNew.createOrder')}</Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>

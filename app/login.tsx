@@ -15,6 +15,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 
 import { Icon } from '@/components/ui/icon';
 import { Palette, Radius, Type } from '@/constants/theme';
@@ -22,12 +23,6 @@ import { useAuth } from '@/lib/auth-context';
 import { ApiError } from '@/lib/api';
 
 const BG_GRADIENT = ['#FFF9F1', '#FCF5EC', '#F7EBD8'] as const;
-
-const trustItems = [
-  { icon: 'bolt', label: 'Instant OTP' },
-  { icon: 'verified_user', label: 'Bank-level Secure' },
-  { icon: 'security', label: 'No Password' },
-];
 
 function GradientButton({
   label,
@@ -40,6 +35,7 @@ function GradientButton({
   disabled?: boolean;
   loading?: boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <Pressable
       onPress={onPress}
@@ -49,13 +45,14 @@ function GradientButton({
         (disabled || loading) && styles.buttonDisabled,
         pressed && styles.buttonPressed,
       ]}>
-      <Text style={styles.buttonText}>{loading ? 'Please wait…' : label}</Text>
+      <Text style={styles.buttonText}>{loading ? t('common.pleaseWait') : label}</Text>
     </Pressable>
   );
 }
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { sendOtp, verifyOtp } = useAuth();
 
   const [phone, setPhone] = useState('');
@@ -126,7 +123,7 @@ export default function LoginScreen() {
 
   const onContinue = async () => {
     if (phone.replace(/\D/g, '').length !== 10) {
-      setError('Please enter a valid 10-digit mobile number.');
+      setError(t('auth.validPhoneError'));
       return;
     }
     setError('');
@@ -138,7 +135,7 @@ export default function LoginScreen() {
       setStep('otp');
       setTimeout(focusOtpInput, 150);
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Could not send OTP. Please try again.');
+      setError(e instanceof ApiError ? e.message : t('auth.sendOtpFailed'));
     } finally {
       setSending(false);
     }
@@ -154,7 +151,7 @@ export default function LoginScreen() {
       startResendTimer();
       focusOtpInput();
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : 'Could not resend OTP. Please try again.');
+      setError(e instanceof ApiError ? e.message : t('auth.resendOtpFailed'));
       startResendTimer();
     } finally {
       setSending(false);
@@ -163,7 +160,7 @@ export default function LoginScreen() {
 
   const onVerify = async () => {
     if (otp.length !== 4) {
-      setError('Enter the 4-digit OTP to continue.');
+      setError(t('auth.enterOtpError'));
       return;
     }
     setError('');
@@ -175,11 +172,11 @@ export default function LoginScreen() {
       if (e instanceof ApiError && e.status === 401) {
         triggerShake();
         setOtp('');
-        setError('Incorrect OTP. Please try again.');
+        setError(t('auth.incorrectOtp'));
       } else if (e instanceof ApiError) {
         setError(e.message);
       } else {
-        setError('Verification failed. Please try again.');
+        setError(t('auth.verifyFailed'));
       }
     } finally {
       setVerifying(false);
@@ -264,9 +261,9 @@ export default function LoginScreen() {
                   <Image source={require('@/assets/images/logo.png')} style={styles.logo} contentFit="contain" />
                 </View>
               </View>
-              <Text style={styles.brandName}>Craft Flow</Text>
+              <Text style={styles.brandName}>{t('app.name')}</Text>
               <View style={styles.brandTagline}>
-                <Text style={styles.brandTaglineText}>One app for orders, karigars & money</Text>
+                <Text style={styles.brandTaglineText}>{t('auth.tagline')}</Text>
               </View>
             </Animated.View>
 
@@ -275,10 +272,10 @@ export default function LoginScreen() {
                 <>
                   <View style={styles.stepChip}>
                     <Icon name="phone" size={16} color={Palette.primary} />
-                    <Text style={styles.stepChipText}>PHONE VERIFICATION</Text>
+                    <Text style={styles.stepChipText}>{t('auth.phoneVerification')}</Text>
                   </View>
                   <Text style={styles.cardSubtitle}>
-                    Enter your 10-digit mobile number to continue.
+                    {t('auth.phoneSubtitle')}
                   </Text>
 
                   <View style={styles.inputShell}>
@@ -289,7 +286,7 @@ export default function LoginScreen() {
                     <View style={styles.inputDivider} />
                     <TextInput
                       style={styles.input}
-                      placeholder="98765 43210"
+                      placeholder={t('auth.otpPlaceholder')}
                       placeholderTextColor={Palette.outline}
                       keyboardType="number-pad"
                       maxLength={10}
@@ -301,35 +298,32 @@ export default function LoginScreen() {
                   {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
                   <Text style={styles.footerNote}>
-                    By continuing you agree to our Terms of Service and Privacy Policy.
+                    {t('auth.termsNote')}
                   </Text>
 
-                  <GradientButton label="Continue" onPress={onContinue} loading={sending} />
+                  <GradientButton label={t('auth.continue')} onPress={onContinue} loading={sending} />
                 </>
               ) : (
                 <>
                   <View style={styles.stepChip}>
                     <Icon name="verified_user" size={16} color={Palette.primary} />
-                    <Text style={styles.stepChipText}>SECURE OTP CHECK</Text>
+                    <Text style={styles.stepChipText}>{t('auth.secureOtpCheck')}</Text>
                   </View>
                   <View style={styles.otpHeader}>
                     <View style={styles.shieldIconWrap}>
                       <Icon name="security" size={22} color={Palette.primary} />
                     </View>
                     <View style={styles.otpHeaderText}>
-                      <Text style={styles.cardTitle}>Enter the 4-digit code</Text>
+                      <Text style={styles.cardTitle}>{t('auth.enter4DigitCode')}</Text>
                       <Text style={styles.cardSubtitle}>
-                        Sent to +91 {phone}{' '}
-                        <Text style={styles.changeText} onPress={onChangeNumber}>
-                          Change
-                        </Text>
+                        {t('auth.sentTo', { phone: `+91 ${phone}` })} <Text style={styles.changeText} onPress={onChangeNumber}>{t('auth.change')}</Text>
                       </Text>
                     </View>
                   </View>
 
                   <View style={styles.devOtpPill}>
                     <Icon name="lock" size={14} color={Palette.primary} />
-                    <Text style={styles.devOtpText}>Dev OTP: {devOtp}</Text>
+                    <Text style={styles.devOtpText}>{t('auth.devOtp', { code: devOtp })}</Text>
                   </View>
 
                   <Pressable style={styles.otpBoxes} onPress={focusOtpInput}>
@@ -350,11 +344,11 @@ export default function LoginScreen() {
                   {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
                   <Text style={styles.footerNote}>
-                    By continuing you agree to our Terms of Service and Privacy Policy.
+                    {t('auth.termsNote')}
                   </Text>
 
                   <GradientButton
-                    label="Verify & Continue"
+                    label={t('auth.verifyContinue')}
                     onPress={onVerify}
                     loading={verifying}
                   />
@@ -364,9 +358,9 @@ export default function LoginScreen() {
                     onPress={onResend}
                     disabled={!canResend}
                     hitSlop={6}>
-                    <Text style={styles.resendText}>Didn&apos;t receive the code? </Text>
+                    <Text style={styles.resendText}>{t('auth.didntReceive')}</Text>
                     <Text style={[styles.resendLink, !canResend && styles.linkDisabled]}>
-                      {canResend ? 'Resend OTP' : `Resend in ${resendIn}s`}
+                      {canResend ? t('auth.resendOtp') : t('auth.resendIn', { seconds: resendIn })}
                     </Text>
                   </Pressable>
                 </>
@@ -374,7 +368,11 @@ export default function LoginScreen() {
             </Animated.View>
 
             <View style={styles.trustRow}>
-              {trustItems.map((item) => (
+              {[
+                { icon: 'bolt', label: t('auth.instantOtp') },
+                { icon: 'verified_user', label: t('auth.bankSecure') },
+                { icon: 'security', label: t('auth.noPassword') },
+              ].map((item) => (
                 <View key={item.label} style={styles.trustItem}>
                   <Icon name={item.icon} size={18} color={Palette.secondary} />
                   <Text style={styles.trustLabel}>{item.label}</Text>

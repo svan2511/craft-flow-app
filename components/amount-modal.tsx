@@ -11,6 +11,7 @@ import {
   View,
   type ViewStyle,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Icon } from '@/components/ui/icon';
 import { Palette, Radius, Spacing, Type } from '@/constants/theme';
@@ -20,7 +21,7 @@ export function AmountModal({
   title,
   subtitle,
   confirmLabel,
-  notePlaceholder = 'e.g. Cash advance',
+  notePlaceholder,
   onClose,
   onSubmit,
   submitLoading = false,
@@ -34,6 +35,7 @@ export function AmountModal({
   onSubmit: (amount: number, note: string) => void;
   submitLoading?: boolean;
 }) {
+  const { t } = useTranslation();
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
 
@@ -88,7 +90,7 @@ export function AmountModal({
             </View>
 
             <View>
-              <Text style={styles.label}>Amount (₹)</Text>
+              <Text style={styles.label}>{t('payments.amount')}</Text>
               <TextInput
                 style={styles.input}
                 value={amount}
@@ -101,7 +103,7 @@ export function AmountModal({
             </View>
 
             <View>
-              <Text style={styles.label}>Note (optional)</Text>
+              <Text style={styles.label}>{t('payments.noteOptional')}</Text>
               <TextInput
                 style={styles.input}
                 value={note}
@@ -113,13 +115,13 @@ export function AmountModal({
 
             <View style={styles.buttonRow}>
               <Pressable style={styles.cancelButton} onPress={close} disabled={submitLoading}>
-                <Text style={styles.cancelText}>Cancel</Text>
+                <Text style={styles.cancelText}>{t('common.cancel')}</Text>
               </Pressable>
               <Pressable
                 style={[styles.submitButton, submitLoading && styles.buttonDisabled]}
                 onPress={submit}
                 disabled={submitLoading}>
-                <Text style={styles.submitText}>{submitLoading ? 'Saving…' : confirmLabel}</Text>
+                <Text style={styles.submitText}>{submitLoading ? t('common.saving') : confirmLabel}</Text>
               </Pressable>
             </View>
           </View>

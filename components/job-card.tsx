@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Icon } from '@/components/ui/icon';
 import { StatusBadge, type BadgeVariant } from '@/components/ui/status-badge';
@@ -33,7 +34,8 @@ export function JobCard({
   dimmed?: boolean;
   showFinance?: boolean;
 }) {
-  const stageMeta = stage ? stageStatusMeta(stage.status) : null;
+  const { t } = useTranslation();
+  const stageMeta = stage ? stageStatusMeta(t, stage.status) : null;
   const blink = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -57,7 +59,7 @@ export function JobCard({
               <Text style={styles.orderLabel}>{orderId}</Text>
             </View>
             <Text style={styles.title}>{title}</Text>
-            <Animated.Text style={[styles.clickHint, { opacity: blink }]}>view details</Animated.Text>
+            <Animated.Text style={[styles.clickHint, { opacity: blink }]}>{t('jobCard.viewDetails')}</Animated.Text>
           </View>
         <View style={styles.headerRight}>
           {stage ? (
@@ -70,7 +72,7 @@ export function JobCard({
               </Text>
             </View>
           ) : (
-            <StatusBadge label={statusLabel(statusVariant)} variant={statusVariant} />
+            <StatusBadge label={statusLabel(statusVariant, t)} variant={statusVariant} />
           )}
         </View>
       </View>
@@ -82,7 +84,7 @@ export function JobCard({
               <Icon name="person" size={22} color={Palette.primary} />
             </View>
             <View style={styles.personInfo}>
-              <Text style={styles.personLabel}>Customer</Text>
+              <Text style={styles.personLabel}>{t('jobCard.customer')}</Text>
               <Text style={styles.personName}>{customer}</Text>
             </View>
           </View>
@@ -92,7 +94,7 @@ export function JobCard({
               <Icon name="engineering" size={22} color={Palette.primary} />
             </View>
             <View style={styles.personInfo}>
-              <Text style={styles.personLabel}>Assigned Worker</Text>
+              <Text style={styles.personLabel}>{t('jobCard.assignedWorker')}</Text>
               <Text style={styles.personName}>{worker}</Text>
             </View>
           </View>
@@ -101,15 +103,15 @@ export function JobCard({
         {showFinance ? (
           <View style={styles.financePill}>
             <View style={styles.financeCol}>
-              <Text style={styles.financeLabel}>Total</Text>
+              <Text style={styles.financeLabel}>{t('jobCard.total')}</Text>
               <Text style={styles.financeValue}>{total}</Text>
             </View>
             <View style={[styles.financeCol, styles.financeColBorder]}>
-              <Text style={styles.financeLabel}>Paid</Text>
+              <Text style={styles.financeLabel}>{t('jobCard.paid')}</Text>
               <Text style={styles.financeValue}>{paid}</Text>
             </View>
             <View style={styles.financeCol}>
-              <Text style={styles.financeLabel}>Due</Text>
+              <Text style={styles.financeLabel}>{t('jobCard.due')}</Text>
               <Text style={[styles.financeValue, styles.financeDueValue]}>{due}</Text>
             </View>
           </View>
@@ -119,18 +121,21 @@ export function JobCard({
   );
 }
 
-function statusLabel(variant: BadgeVariant): string {
+function statusLabel(
+  variant: BadgeVariant,
+  t: (key: string, params?: Record<string, unknown>) => string,
+): string {
   switch (variant) {
     case 'inStructure':
-      return 'In Structure';
+      return t('status.inStructure');
     case 'inPolish':
-      return 'In Polish';
+      return t('status.inPolish');
     case 'ready':
-      return 'Ready';
+      return t('status.ready');
     case 'completed':
-      return 'Completed';
+      return t('status.completed');
     default:
-      return 'New';
+      return t('status.new');
   }
 }
 

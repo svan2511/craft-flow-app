@@ -10,6 +10,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Icon } from '@/components/ui/icon';
 import { Palette, Radius, Spacing, Type } from '@/constants/theme';
@@ -27,6 +28,7 @@ export function MaterialCostModal({
   onClose: () => void;
   onSubmit: (cost: number | null) => void;
 }) {
+  const { t } = useTranslation();
   const [cost, setCost] = useState('');
 
   useEffect(() => {
@@ -52,12 +54,12 @@ export function MaterialCostModal({
                 <Icon name="inventory_2" size={22} color={Palette.primary} />
               </View>
               <View style={styles.headerText}>
-                <Text style={styles.title}>Material Cost</Text>
+                <Text style={styles.title}>{t('materialCost.title')}</Text>
               </View>
             </View>
 
             <View>
-              <Text style={styles.label}>Material Cost (₹)</Text>
+              <Text style={styles.label}>{t('materialCost.materialCostLabel')}</Text>
               <TextInput
                 style={styles.input}
                 value={cost}
@@ -71,7 +73,7 @@ export function MaterialCostModal({
 
             <View style={styles.buttonRow}>
               <Pressable style={styles.cancelButton} onPress={onClose} disabled={submitLoading}>
-                <Text style={styles.cancelText}>Cancel</Text>
+                <Text style={styles.cancelText}>{t('common.cancel')}</Text>
               </Pressable>
               <Pressable
                 style={[styles.submitButton, (!canSubmit || submitLoading) && styles.buttonDisabled]}
@@ -79,7 +81,7 @@ export function MaterialCostModal({
                   onSubmit(cost.trim() === '' ? null : parseFloat(cost))
                 }
                 disabled={!canSubmit || submitLoading}>
-                <Text style={styles.submitText}>{submitLoading ? 'Saving…' : 'Save'}</Text>
+                <Text style={styles.submitText}>{submitLoading ? t('common.saving') : t('common.save')}</Text>
               </Pressable>
             </View>
           </View>

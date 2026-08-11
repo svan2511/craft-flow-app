@@ -1,34 +1,12 @@
 import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppHeader } from '@/components/app-header';
 import { Icon } from '@/components/ui/icon';
 import { useToast } from '@/components/toast-provider';
 import { Palette, Radius, Type } from '@/constants/theme';
-
-const HELP_ITEMS = [
-  {
-    icon: 'person_add',
-    title: 'Add a new order',
-    body: 'Tap the + button on the Orders tab and fill in the customer name, item, and total amount. You can attach up to 3 design photos and set a delivery date.',
-  },
-  {
-    icon: 'payments',
-    title: 'Recording payment',
-    body: 'Open an order and tap the payment button to record advance, milestone, or balance payments in cash, UPI, online, or cheque.',
-  },
-  {
-    icon: 'handyman',
-    title: 'Managing karigars',
-    body: 'Add karigars from the Karigars tab. Track advances and weekly settlements, and assign them to orders to keep the ledger clear.',
-  },
-  {
-    icon: 'analytics',
-    title: 'Reading reports',
-    body: 'The Reports tab shows money in, money out, profit, and pending balances for today, this week, this month, or this year. Use the Download button to save a PDF.',
-  },
-];
 
 function HelpRow({ icon, title, body }: { icon: string; title: string; body: string }) {
   return (
@@ -47,14 +25,38 @@ function HelpRow({ icon, title, body }: { icon: string; title: string; body: str
 export default function HelpScreen() {
   const router = useRouter();
   const { showToast } = useToast();
+  const { t } = useTranslation();
+
+  const helpItems = [
+    {
+      icon: 'person_add',
+      title: t('help.addOrderTitle'),
+      body: t('help.addOrderBody'),
+    },
+    {
+      icon: 'payments',
+      title: t('help.recordingPaymentTitle'),
+      body: t('help.recordingPaymentBody'),
+    },
+    {
+      icon: 'handyman',
+      title: t('help.managingKarigarsTitle'),
+      body: t('help.managingKarigarsBody'),
+    },
+    {
+      icon: 'analytics',
+      title: t('help.readingReportsTitle'),
+      body: t('help.readingReportsBody'),
+    },
+  ];
 
   const contact = () => {
-    showToast('Contact support: support@craftflow.app', { variant: 'info' });
+    showToast(t('help.contactSupportToast'), { variant: 'info' });
   };
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
-      <AppHeader title="Help & Support" showLogo={false} onBack={() => router.back()} right={<View style={{ width: 48 }} />} />
+      <AppHeader title={t('help.title')} showLogo={false} onBack={() => router.back()} right={<View style={{ width: 48 }} />} />
 
       <ScrollView
         style={styles.scroll}
@@ -64,14 +66,13 @@ export default function HelpScreen() {
           <View style={styles.heroIconWrap}>
             <Icon name="help_outline" size={32} color={Palette.onPrimary} />
           </View>
-          <Text style={styles.heroTitle}>Help & Support</Text>
+          <Text style={styles.heroTitle}>{t('help.title')}</Text>
           <Text style={styles.heroBody}>
-            A quick guide to the most common tasks in Craft Flow. If you need more help, reach
-            out to us any time.
+            {t('help.heroBody')}
           </Text>
         </View>
 
-        {HELP_ITEMS.map((item) => (
+        {helpItems.map((item) => (
           <HelpRow key={item.title} icon={item.icon} title={item.title} body={item.body} />
         ))}
 
@@ -79,7 +80,7 @@ export default function HelpScreen() {
           style={({ pressed }) => [styles.contactButton, pressed && styles.pressed]}
           onPress={contact}>
           <Icon name="chat" size={20} color={Palette.onPrimary} />
-          <Text style={styles.contactText}>Contact Support</Text>
+          <Text style={styles.contactText}>{t('help.contactSupport')}</Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>

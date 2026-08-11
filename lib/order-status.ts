@@ -1,6 +1,8 @@
 import type { BadgeVariant } from '@/components/ui/status-badge';
 import { Palette } from '@/constants/theme';
 
+export type Translator = (key: string, params?: Record<string, unknown>) => string;
+
 export type ApiOrderStatus = 'new' | 'in_structure' | 'in_polish' | 'ready' | 'completed';
 
 export type ApiOrderStageStatus = 'pending' | 'in_progress' | 'completed';
@@ -17,14 +19,14 @@ export type ApiOrderStage = {
 
 export type StageStatusMeta = { label: string; color: string; bg: string };
 
-export function stageStatusMeta(status: string): StageStatusMeta {
+export function stageStatusMeta(t: Translator, status: string): StageStatusMeta {
   switch (status) {
     case 'completed':
-      return { label: 'Done', color: Palette.onTertiary, bg: Palette.tertiary };
+      return { label: t('status.done'), color: Palette.onTertiary, bg: Palette.tertiary };
     case 'in_progress':
-      return { label: 'In Progress', color: Palette.onPrimary, bg: Palette.primary };
+      return { label: t('status.inProgress'), color: Palette.onPrimary, bg: Palette.primary };
     default:
-      return { label: 'Pending', color: Palette.onSurfaceVariant, bg: Palette.surfaceContainerHigh };
+      return { label: t('status.pending'), color: Palette.onSurfaceVariant, bg: Palette.surfaceContainerHigh };
   }
 }
 
@@ -62,23 +64,29 @@ export function nextStageName(stages: { name: string }[]): string | null {
 
 export type StatusMeta = { variant: BadgeVariant; label: string };
 
-const STATUS_META: Record<ApiOrderStatus, StatusMeta> = {
-  new: { variant: 'new', label: 'New' },
-  in_structure: { variant: 'inStructure', label: 'In Structure' },
-  in_polish: { variant: 'inPolish', label: 'In Polish' },
-  ready: { variant: 'ready', label: 'Ready' },
-  completed: { variant: 'completed', label: 'Completed' },
-};
-
-export function orderStatusMeta(status: string): StatusMeta {
-  return STATUS_META[status as ApiOrderStatus] ?? { variant: 'new', label: 'New' };
+export function orderStatusMeta(t: Translator, status: string): StatusMeta {
+  switch (status as ApiOrderStatus) {
+    case 'new':
+      return { variant: 'new', label: t('status.new') };
+    case 'in_structure':
+      return { variant: 'inStructure', label: t('status.inStructure') };
+    case 'in_polish':
+      return { variant: 'inPolish', label: t('status.inPolish') };
+    case 'ready':
+      return { variant: 'ready', label: t('status.ready') };
+    case 'completed':
+      return { variant: 'completed', label: t('status.completed') };
+    default:
+      return { variant: 'new', label: t('status.new') };
+  }
 }
 
 export function orderStatusIndex(status: string): number {
-  return Object.keys(STATUS_META).indexOf(status as ApiOrderStatus);
+  const order: ApiOrderStatus[] = ['new', 'in_structure', 'in_polish', 'ready', 'completed'];
+  return order.indexOf(status as ApiOrderStatus);
 }
 
-export function deliveryBadge(deliveryDate: string | null | undefined): StatusMeta | null {
+export function deliveryBadge(t: Translator, deliveryDate: string | null | undefined): StatusMeta | null {
   if (!deliveryDate) {
     return null;
   }
@@ -87,15 +95,15 @@ export function deliveryBadge(deliveryDate: string | null | undefined): StatusMe
   const days = Math.ceil((due.getTime() - now.getTime()) / 86_400_000);
 
   if (days < 0) {
-    return { variant: 'overdue', label: 'Overdue' };
+    return { variant: 'overdue', label: t('status.overdue') };
   }
   if (days <= 1) {
-    return { variant: 'dueTomorrow', label: 'Due Tomorrow' };
+    return { variant: 'dueTomorrow', label: t('status.dueTomorrow') };
   }
   if (days <= 2) {
-    return { variant: 'due48h', label: 'Due in 48h' };
+    return { variant: 'due48h', label: t('status.dueIn48h') };
   }
-  return { variant: 'pending', label: `Due in ${days}d` };
+  return { variant: 'pending', label: t('status.dueInDays', { days }) };
 }
 
 export type ApiOrder = {

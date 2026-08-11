@@ -2,6 +2,7 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { KarigarModal } from '@/components/karigar-modal';
 import { Screen } from '@/components/screen';
@@ -27,6 +28,7 @@ type KarigarListItem = {
 
 export default function KarigarsScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -71,7 +73,7 @@ export default function KarigarsScreen() {
       setShowAdd(false);
       await list.reload();
     } catch (e) {
-      showToast(e instanceof Error ? e.message : 'Could not add karigar.', { variant: 'error' });
+      showToast(e instanceof Error ? e.message : t('karigars.couldNotAdd'), { variant: 'error' });
     } finally {
       setSubmitting(false);
     }
@@ -92,15 +94,15 @@ export default function KarigarsScreen() {
           {empty ? (
             <RoyalEmpty
               icon="handyman"
-              title="No Karigars Yet"
-              subtitle="Add your first karigar to start assigning jobs and tracking settlements."
-              tagline="Every workshop is built on skilled hands."
+              title={t('karigars.emptyTitle')}
+              subtitle={t('karigars.emptySubtitle')}
+              tagline={t('karigars.emptyTagline')}
               action={
                 <Pressable
                   style={({ pressed }) => [styles.emptyAddButton, pressed && styles.pressed]}
                   onPress={() => setShowAdd(true)}>
                   <Icon name="person_add" size={18} color={Palette.onPrimary} />
-                  <Text style={styles.emptyAddText}>Add Karigar</Text>
+                  <Text style={styles.emptyAddText}>{t('karigars.addKarigar')}</Text>
                 </Pressable>
               }
             />
@@ -110,7 +112,7 @@ export default function KarigarsScreen() {
                 <Icon name="search" size={22} color={Palette.primary} />
                 <TextInput
                   style={styles.searchInput}
-                  placeholder="Search by name or phone"
+                  placeholder={t('karigars.searchPlaceholder')}
                   placeholderTextColor={Palette.onSurfaceVariant}
                   value={query}
                   onChangeText={setQuery}
@@ -133,24 +135,24 @@ export default function KarigarsScreen() {
                 <View style={styles.sectionIcon}>
                   <Icon name="groups" size={15} color={Palette.primary} />
                 </View>
-                <Text style={styles.sectionTitle}>Team Members</Text>
+                <Text style={styles.sectionTitle}>{t('karigars.teamMembers')}</Text>
               </View>
               <View style={styles.sectionActions}>
                 {query.trim().length > 0 ? (
-                  <Text style={styles.sectionHint}>{visible.length} found</Text>
+                  <Text style={styles.sectionHint}>{t('karigars.found', { count: visible.length })}</Text>
                 ) : null}
                 <Pressable
                   style={({ pressed }) => [styles.addSmall, pressed && styles.pressed]}
                   onPress={() => setShowAdd(true)}>
                   <Icon name="add" size={16} color={Palette.onPrimary} />
-                  <Text style={styles.addSmallText}>Add</Text>
+                  <Text style={styles.addSmallText}>{t('common.add')}</Text>
                 </Pressable>
               </View>
             </View>
           ) : null}
 
           {!empty && visible.length === 0 ? (
-            <Text style={styles.emptyText}>No karigars match “{query.trim()}”.</Text>
+            <Text style={styles.emptyText}>{t('karigars.noMatch', { query: query.trim() })}</Text>
           ) : null}
 
           {!empty && visible.length > 0 ? (
@@ -175,7 +177,7 @@ export default function KarigarsScreen() {
                         <View style={styles.rowMetaRow}>
                           <Icon name="handyman" size={13} color={Palette.primary} />
                           <Text style={styles.rowMeta} numberOfLines={1}>
-                            {k.role ?? 'Karigar'}
+                            {k.role ?? t('karigars.role')}
                           </Text>
                         </View>
                         {k.phone ? (
@@ -189,7 +191,7 @@ export default function KarigarsScreen() {
                       </View>
                       <View style={styles.jobPill}>
                         <Text style={styles.jobPillValue}>{k.orders_count}</Text>
-                        <Text style={styles.jobPillLabel}>Jobs</Text>
+                        <Text style={styles.jobPillLabel}>{t('karigars.jobs')}</Text>
                       </View>
                     </View>
 
@@ -198,21 +200,21 @@ export default function KarigarsScreen() {
                         <Text style={[styles.statValue, styles.metricActiveValue]}>
                           {k.active_orders ?? 0}
                         </Text>
-                        <Text style={styles.statLabel}>In Progress</Text>
+                        <Text style={styles.statLabel}>{t('karigars.inProgress')}</Text>
                       </View>
                       <View style={styles.statDivider} />
                       <View style={styles.statSegment}>
                         <Text style={[styles.statValue, styles.metricCompletedValue]}>
                           {k.completed_orders ?? 0}
                         </Text>
-                        <Text style={styles.statLabel}>Completed</Text>
+                        <Text style={styles.statLabel}>{t('karigars.completed')}</Text>
                       </View>
                       <View style={styles.statDivider} />
                       <View style={styles.statSegment}>
                         <Text style={[styles.statValue, styles.metricPendingValue]}>
                           {k.pending_orders ?? 0}
                         </Text>
-                        <Text style={styles.statLabel}>Not Started</Text>
+                        <Text style={styles.statLabel}>{t('karigars.notStarted')}</Text>
                       </View>
                     </View>
                   </View>

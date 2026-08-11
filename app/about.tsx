@@ -1,28 +1,30 @@
 import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppHeader } from '@/components/app-header';
 import { Icon } from '@/components/ui/icon';
 import { Palette, Radius, Type } from '@/constants/theme';
 
-const LEGAL = [
-  {
-    title: 'Data stays yours',
-    body: 'All workshop, customer, karigar, and payment data is stored on your secure account and can be exported from reports at any time.',
-  },
-  {
-    title: 'Sign-in & security',
-    body: 'Craft Flow uses OTP verification on your mobile number. No password is stored anywhere.',
-  },
-];
-
 export default function AboutScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
+
+  const legal = [
+    {
+      title: t('about.dataYoursTitle'),
+      body: t('about.dataYoursBody'),
+    },
+    {
+      title: t('about.securityTitle'),
+      body: t('about.securityBody'),
+    },
+  ];
 
   return (
     <SafeAreaView style={styles.root} edges={['top', 'left', 'right']}>
-      <AppHeader title="About Craft Flow" showLogo={false} onBack={() => router.back()} right={<View style={{ width: 48 }} />} />
+      <AppHeader title={t('about.title')} showLogo={false} onBack={() => router.back()} right={<View style={{ width: 48 }} />} />
 
       <ScrollView
         style={styles.scroll}
@@ -33,17 +35,16 @@ export default function AboutScreen() {
             <Icon name="handyman" size={40} color={Palette.onPrimary} />
           </View>
           <Text style={styles.appName}>Craft Flow</Text>
-          <Text style={styles.appVersion}>Version 1.0.0</Text>
+          <Text style={styles.appVersion}>{t('about.version')}</Text>
           <Text style={styles.tagline}>
-            A complete workshop management assistant — orders, karigars, payments, and reports in
-            one place.
+            {t('about.tagline')}
           </Text>
         </View>
 
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>How your data is handled</Text>
+          <Text style={styles.sectionTitle}>{t('about.dataHandled')}</Text>
         </View>
-        {LEGAL.map((item) => (
+        {legal.map((item) => (
           <View key={item.title} style={styles.card}>
             <View style={styles.rowTop}>
               <View style={styles.iconWrap}>
@@ -55,7 +56,7 @@ export default function AboutScreen() {
           </View>
         ))}
 
-        <Text style={styles.footerText}>Built with care for workshops.</Text>
+        <Text style={styles.footerText}>{t('about.footer')}</Text>
       </ScrollView>
     </SafeAreaView>
   );
