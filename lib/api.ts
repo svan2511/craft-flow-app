@@ -2,8 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const TOKEN_KEY = 'km.token';
 
-export const API_BASE_URL = 'http://192.168.1.10:8000/api/v1';
-//export const API_BASE_URL = 'https://craft-flow.onrender.com/api/v1';
+//export const API_BASE_URL = 'http://192.168.1.10:8000/api/v1';
+export const API_BASE_URL = 'https://craft-flow.onrender.com/api/v1'; 
 
 const DEFAULT_TIMEOUT_MS = 30000;
 
